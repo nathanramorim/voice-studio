@@ -2,7 +2,7 @@
   "feature_id": "feat-01",
   "branch": "feat/01-voz-multilingue-e-sotaque",
   "spec_status": "reviewed",
-  "updated_at": "2026-11-16T16:52:38Z",
+  "updated_at": "2026-11-16T16:54:36Z",
   "items": [
     {
       "task_id": "feat-01-01-modulo-profile",
@@ -108,7 +108,7 @@
       "task_id": "feat-01-06-traduzir",
       "title": "feat-01-06-traduzir — `traduzir`: áudio ou vídeo para outro idioma, com a voz do perfil",
       "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-06-traduzir.md",
-      "status": "queued",
+      "status": "review_pending",
       "rules": [
         "VOZ-01",
         "VOZ-03",
@@ -117,7 +117,7 @@
         "TST-01"
       ],
       "skills_used": [],
-      "attempts": 0
+      "attempts": 1
     },
     {
       "task_id": "feat-01-07-skill-e-adaptadores",

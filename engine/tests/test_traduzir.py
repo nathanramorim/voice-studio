@@ -122,3 +122,163 @@ def test_audio_cli_dub_aceita_entrada_de_audio(tmp_path, monkeypatch):
                                        "--confirm-own-voice", "--accept-cpml",
                                        "--out", str(tmp_path / "d.mp4")])
     assert bad.exit_code == 1 and "só áudio" in bad.output
+
+
+# ---- feat-01-06: comando `traduzir` em duas fases -------------------------------------------
+
+import json
+
+from test_falar import Recorder, make_profile
+
+from voice_studio import falar, traduzir
+
+FAKE_TRANSCRIPT = [{"start": 0.0, "end": 2.0, "source": "Olá meu amigo"},
+                   {"start": 2.2, "end": 4.0, "source": "Até logo"}]
+
+
+def fake_transcriber(entrada, model, lang):
+    return [dict(s) for s in FAKE_TRANSCRIPT]
+
+
+def translated(tmp_path, texts=("Hello there my friend", "See you soon")):
+    path = tmp_path / "seg.json"
+    path.write_text(json.dumps([dict(s, text=t) for s, t in zip(FAKE_TRANSCRIPT, texts)]),
+                    encoding="utf-8")
+    return path
+
+
+def mock_audio(monkeypatch):
+    """Dublagem sem ffmpeg: o mix vira um arquivo vazio e a entrada conta como só áudio."""
+    monkeypatch.setattr(audio, "has_video", lambda p: False)
+    monkeypatch.setattr(audio, "mix_dub", lambda v, parts, out, keep: out.write_bytes(b"x"))
+    monkeypatch.setattr(audio, "speed_up", lambda s, d, f: d.write_bytes(s.read_bytes()))
+
+
+def test_fases_prepare_grava_segmentos_com_text_vazio(tmp_path, ref):
+    _, perfil = make_profile(tmp_path, ref)
+    destino = tmp_path / "seg.json"
+    traduzir.prepare(ref, perfil, "pt", "en", None, destino, fake_transcriber)
+    rows = json.loads(destino.read_text(encoding="utf-8"))
+    assert [r["source"] for r in rows] == ["Olá meu amigo", "Até logo"]
+    assert all(r["text"] == "" for r in rows)
+    with pytest.raises(VoiceError, match="já existe"):
+        traduzir.prepare(ref, perfil, "pt", "en", None, destino, fake_transcriber)
+
+
+def test_fases_render_gera_audio_dublado_com_vocabulario_do_destino(tmp_path, ref, monkeypatch):
+    mock_audio(monkeypatch)
+    _, perfil = make_profile(tmp_path, ref, {"en": {"IA": "AI"}, "pt": {"IA": "IÁ"}})
+    seg = translated(tmp_path, ("Hello IA friend", "See you soon"))
+    synth = Recorder()
+    out = tmp_path / "d.m4a"
+    report = traduzir.render(ref, seg, perfil, "en", out, synth, takes=1)
+    assert out.is_file() and report["validated"] is True
+    assert synth.calls[0] == ("Hello AI friend", perfil["amostra_path"], "en")
+    assert set(report) >= {"overflow", "suspect_takes", "validated"}
+
+
+def test_fases_cli_ponta_a_ponta(tmp_path, ref, monkeypatch):
+    mock_audio(monkeypatch)
+    base, _ = make_profile(tmp_path, ref)
+    monkeypatch.setattr(traduzir.transcribe, "transcribe", fake_transcriber)
+    seg = tmp_path / "seg.json"
+    args = ["traduzir", str(ref), "--perfil", "nathan", "--para", "en", "--perfis-dir", str(base)]
+    res = CliRunner().invoke(cli.app, [*args, "--out", str(seg)])
+    assert res.exit_code == 0 and "--segmentos" in res.output, res.output
+    rows = json.loads(seg.read_text(encoding="utf-8"))
+    for r, t in zip(rows, ("Hello there my friend", "See you soon")):
+        r["text"] = t
+    seg.write_text(json.dumps(rows), encoding="utf-8")
+    monkeypatch.delenv("VOICE_STUDIO_ACCEPT_CPML", raising=False)
+    monkeypatch.setattr(synth_mod, "xtts_synth", lambda speed=1.08: Recorder())
+    out = tmp_path / "d.m4a"
+    res = CliRunner().invoke(cli.app, [*args, "--segmentos", str(seg), "--accept-cpml",
+                                       "--out", str(out), "--takes", "1"])
+    assert res.exit_code == 0, res.output
+    assert out.is_file() and (tmp_path / "report.json").is_file()
+
+
+def test_perfil_ausente_ou_sem_consentimento_falha_antes_do_motor(tmp_path, ref, monkeypatch):
+    base, _ = make_profile(tmp_path, ref)
+    touched = []
+    monkeypatch.setattr(synth_mod, "xtts_synth", lambda speed=1.08: touched.append(1))
+    seg = translated(tmp_path)
+    args = ["--para", "en", "--perfis-dir", str(base), "--segmentos", str(seg), "--accept-cpml"]
+    res = CliRunner().invoke(cli.app, ["traduzir", str(ref), "--perfil", "ninguem", *args])
+    assert res.exit_code == 1 and not touched
+    pfile = base / "nathan" / "perfil.json"
+    data = json.loads(pfile.read_text(encoding="utf-8"))
+    data["consentimento"] = False
+    data.pop("consent", None)
+    pfile.write_text(json.dumps(data), encoding="utf-8")
+    res = CliRunner().invoke(cli.app, ["traduzir", str(ref), "--perfil", "nathan", *args])
+    assert res.exit_code == 1 and not touched
+    res = CliRunner().invoke(cli.app, ["traduzir", str(ref), "--para", "en"])
+    assert res.exit_code == 2  # --perfil obrigatório (erro de uso do Typer)
+
+
+@pytest.mark.parametrize("caso", ["traducao-faltando"])
+def test_segmento_sem_text_aponta_o_numero_antes_do_motor(tmp_path, ref, monkeypatch, caso):
+    base, perfil = make_profile(tmp_path, ref)
+    seg = translated(tmp_path, ("Hello there", "  "))
+    synth = Recorder()
+    with pytest.raises(VoiceError, match="Segmento 2"):
+        traduzir.render(ref, seg, perfil, "en", tmp_path / "d.m4a", synth, takes=1)
+    assert synth.calls == []
+    touched = []
+    monkeypatch.setattr(synth_mod, "xtts_synth", lambda speed=1.08: touched.append(1))
+    res = CliRunner().invoke(cli.app, ["traduzir", str(ref), "--perfil", "nathan", "--para", "en",
+                                       "--perfis-dir", str(base), "--segmentos", str(seg),
+                                       "--accept-cpml"])
+    assert res.exit_code == 1 and "Segmento 2" in res.output and not touched
+
+
+def test_idioma_fora_do_catalogo_falha_antes_do_motor(tmp_path, ref, monkeypatch):
+    base, perfil = make_profile(tmp_path, ref)
+    with pytest.raises(VoiceError, match="não suportado"):
+        traduzir.prepare(ref, perfil, "pt", "xx", None, tmp_path / "s.json", fake_transcriber)
+    touched = []
+    monkeypatch.setattr(synth_mod, "xtts_synth", lambda speed=1.08: touched.append(1))
+    res = CliRunner().invoke(cli.app, ["traduzir", str(ref), "--perfil", "nathan", "--para", "xx",
+                                       "--perfis-dir", str(base), "--segmentos",
+                                       str(translated(tmp_path)), "--accept-cpml"])
+    assert res.exit_code == 1 and "não suportado" in res.output and not touched
+
+
+def test_idioma_nao_validado_marca_relatorio_e_avisa(tmp_path, ref, monkeypatch):
+    mock_audio(monkeypatch)
+    _, perfil = make_profile(tmp_path, ref)
+    report = traduzir.render(ref, translated(tmp_path, ("Hola amigo mío", "Hasta luego")),
+                             perfil, "es", tmp_path / "d.m4a", Recorder(), takes=1)
+    assert report["validated"] is False
+    assert any("não teve a qualidade verificada" in a for a in traduzir.avisos("es", report))
+    assert traduzir.avisos("en", {"overflow": [], "suspect_takes": []}) == []
+
+
+def test_idioma_cli_es_avisa_e_overflow_e_suspeita_continuam(tmp_path, ref, monkeypatch):
+    mock_audio(monkeypatch)
+    base, _ = make_profile(tmp_path, ref)
+    monkeypatch.setattr(synth_mod, "xtts_synth", lambda speed=1.08: Recorder(seconds=30.0))
+    res = CliRunner().invoke(cli.app, ["traduzir", str(ref), "--perfil", "nathan", "--para", "es",
+                                       "--perfis-dir", str(base), "--segmentos",
+                                       str(translated(tmp_path)), "--accept-cpml", "--takes", "1",
+                                       "--out", str(tmp_path / "d.m4a")])
+    rep = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
+    assert res.exit_code == 2 and rep["validated"] is False
+    assert rep["overflow"] and rep["suspect_takes"]
+    assert "não teve a qualidade verificada" in res.output and "encurte" in res.output
+
+
+def test_takes_zero_cai_no_erro_de_speak_em_falar_e_traduzir(tmp_path, ref, monkeypatch):
+    mock_audio(monkeypatch)
+    _, perfil = make_profile(tmp_path, ref, ajustes={"takes": 2})
+    with pytest.raises(VoiceError, match="pelo menos 1"):
+        falar.run(["Olá mundo agora"], perfil, "pt", tmp_path / "o", Recorder(), takes=0)
+    with pytest.raises(VoiceError, match="pelo menos 1"):
+        traduzir.render(ref, translated(tmp_path), perfil, "en", tmp_path / "d.m4a", Recorder(),
+                        takes=0)
+
+
+def test_perfil_e_ref_juntos_falha_em_falar(tmp_path, ref):
+    with pytest.raises(VoiceError, match="não os dois"):
+        falar.resolve("nathan", ref, True)

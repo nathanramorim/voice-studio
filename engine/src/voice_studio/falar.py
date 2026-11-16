@@ -54,7 +54,7 @@ def run(textos: list[str], perfil: dict, lang: str, out: Path, synth: Synth,
     language = languages.require(lang)
     settings = profile.check_adjusts(perfil.get("ajustes", {}))
     result = speak(textos, Path(perfil["amostra_path"]), lang, out, synth,
-                   profile.vocabulary(perfil, lang), takes or settings["takes"],
+                   profile.vocabulary(perfil, lang), takes if takes is not None else settings["takes"],
                    settings["velocidade"])
     return [{"linha": r.index, "arquivo": r.path.name, "segundos": r.seconds, "ok": r.ok,
              "validated": language.validated, "falado": r.spoken} for r in result]

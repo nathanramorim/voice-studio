@@ -14,6 +14,7 @@ from . import falar as falar_mod
 from . import languages as languages_mod
 from . import profile as profile_mod
 from . import synth as synth_mod
+from . import traduzir as traduzir_mod
 from . import transcribe as transcribe_mod
 from .errors import VoiceError
 
@@ -136,6 +137,49 @@ def dub(video: Path, segments: Path, ref: REF, confirm_own_voice: OWN = False,
     if report["overflow"]:
         typer.secho(f"Atenção: segmentos {report['overflow']} ficaram maiores que o tempo "
                     "disponível; encurte o texto traduzido.", fg=typer.colors.YELLOW)
+
+
+@app.command()
+def traduzir(entrada: Path,
+             perfil: Annotated[str, typer.Option("--perfil", help="Nome do perfil (voz).")],
+             para: Annotated[str, typer.Option("--para", help="Idioma de destino.")],
+             de: Annotated[str, typer.Option("--de", help="Idioma falado na entrada.")] = "pt",
+             model: Annotated[Path | None, typer.Option("--model")] = None,
+             segmentos: Annotated[Path | None, typer.Option(
+                 "--segmentos", help="Fase 2: segments.json com `text` traduzido.")] = None,
+             accept_cpml: CPML = False,
+             out: Annotated[Path | None, typer.Option("--out", "-o")] = None,
+             takes: Annotated[int | None, typer.Option(
+                 "--takes", help="Variações por fala (padrão: ajuste do perfil).")] = None,
+             perfis_dir: PERFIS_DIR = None) -> None:
+    """Traduz áudio ou vídeo em duas fases (transcreve; o agente traduz; dubla com o perfil)."""
+    try:
+        voz = profile_mod.load(perfil, perfis_dir)  # consentimento já registrado no perfil
+        languages_mod.require(para)
+        if segmentos is None:
+            destino = out or Path("segments.json")
+            rows = traduzir_mod.prepare(entrada, voz, de, para, model, destino)
+        else:
+            consent.require_license(accept_cpml)
+            traduzir_mod.check_segments(segmentos)  # antes de carregar o motor
+            if takes is not None and takes < 1:
+                raise VoiceError("--takes deve ser pelo menos 1.")
+            saida = out or traduzir_mod.default_out(entrada)
+            report = traduzir_mod.render(entrada, segmentos, voz, para, saida,
+                                         synth_mod.xtts_synth(speed=1.0), takes)
+    except VoiceError as exc:
+        _fail(exc)
+    if segmentos is None:
+        typer.echo(f"{len(rows)} segmentos em {destino}. Traduza `source` para `text` "
+                   f"(idioma '{para}') e rode de novo com --segmentos {destino} --accept-cpml.")
+        return
+    report_file = saida.parent / "report.json"
+    report_file.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    typer.echo(f"Dublagem em {saida}. Relatório em {report_file}.")
+    for warning in traduzir_mod.avisos(para, report):
+        typer.secho(f"Aviso: {warning}", fg=typer.colors.YELLOW, err=True)
+    if report["suspect_takes"]:
+        raise typer.Exit(2)  # gerou, mas há fala suspeita (relatório gravado)
 
 
 @perfil_app.command("criar")
