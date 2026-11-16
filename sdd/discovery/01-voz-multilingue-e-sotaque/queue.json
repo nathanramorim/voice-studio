@@ -2,7 +2,7 @@
   "feature_id": "feat-01",
   "branch": "feat/01-voz-multilingue-e-sotaque",
   "spec_status": "reviewed",
-  "updated_at": "2026-11-16T16:50:21Z",
+  "updated_at": "2026-11-16T16:52:38Z",
   "items": [
     {
       "task_id": "feat-01-01-modulo-profile",
@@ -50,7 +50,7 @@
       "task_id": "feat-01-03-vocabulario-por-idioma",
       "title": "feat-01-03-vocabulario-por-idioma — Vocabulário de pronúncia por idioma no perfil",
       "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-03-vocabulario-por-idioma.md",
-      "status": "review_pending",
+      "status": "approved",
       "rules": [
         "VOZ-05",
         "DUP-01",
@@ -58,13 +58,18 @@
         "TST-01"
       ],
       "skills_used": [],
-      "attempts": 1
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Commit 81e8aae conforme (VOZ-05, DUP-01, DUP-03, TST-01, SEG-02, ARQ-10). set_vocabulary grava vocab.\u003clang\u003e.json limpo só dentro da pasta do perfil, com arquivos temporários e restauração em falha; nome do arquivo vem de lang validado por languages.require (sem traversal); mapa vazio rejeitado como a spec manda, sem duplicar a validação de vocab.clean; vocabulary() devolve {} sem mapa e nunca mistura idiomas; FileExistsError do mkdir virou VoiceError com teste de symlink pendente; 62 testes e ruff passam. Observação menor: a CLI perfil vocab não tem teste próprio (a spec não exige)."
+      }
     },
     {
       "task_id": "feat-01-04-falar",
       "title": "feat-01-04-falar — `falar`: texto digitado com a voz de um perfil",
       "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-04-falar.md",
-      "status": "review_pending",
+      "status": "approved",
       "rules": [
         "VOZ-01",
         "VOZ-06",
@@ -74,20 +79,30 @@
         "TST-01"
       ],
       "skills_used": [],
-      "attempts": 1
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Commit cbd3f61 conforme (VOZ-01, VOZ-06, VOZ-09, ARQ-06, ARQ-10, TST-01). --perfil e --ref são exclusivos e o código nunca preenche --confirm-own-voice; --accept-cpml é checado antes de xtts_synth (teste com motor que falha se tocado); falar.run recebe o sintetizador por parâmetro; ok:false grava report.json e sai com código 2; check_adjusts valida velocidade e takes, rejeita chaves desconhecidas e perfis antigos continuam carregando; 62 testes e ruff passam. Observações de baixa severidade: (a) takes or settings['takes'] faz --takes 0 cair no valor do perfil em vez de erro; (b) a ramificação perfil+ref juntos não tem teste dedicado; documentar a convenção de código de saída 2."
+      }
     },
     {
       "task_id": "feat-01-05-entrada-audio-ou-video",
       "title": "feat-01-05-entrada-audio-ou-video — Dublagem com entrada e saída de áudio ou vídeo",
       "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-05-entrada-audio-ou-video.md",
-      "status": "review_pending",
+      "status": "approved",
       "rules": [
         "SEG-03",
         "DUP-03",
         "TST-01"
       ],
       "skills_used": [],
-      "attempts": 1
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Commit 3f3a0bb conforme (SEG-03, DUP-03, TST-01). Todas as chamadas externas passam por audio.run com lista de argumentos, sem shell; has_video ignora capa de álbum; check_output valida extensão e falha cedo, antes do motor; o ramo com vídeo de mix_dub manteve os mesmos argumentos; o ajuste em tests/test_dub.py é legítimo (nenhuma asserção removida); testes usam mídia sintética com skipif de ffmpeg e nenhum arquivo de mídia entrou no commit; 62 testes passam."
+      }
     },
     {
       "task_id": "feat-01-06-traduzir",
