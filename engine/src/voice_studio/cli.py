@@ -122,7 +122,7 @@ def dub(video: Path, segments: Path, ref: REF, confirm_own_voice: OWN = False,
         accept_cpml: CPML = False, lang: str = "en",
         out: Annotated[Path, typer.Option("--out", "-o")] = Path("dublado.mp4"),
         takes: int = 3, vocab_file: VOCAB = None, keep_original: float = 0.0) -> None:
-    """Dubla o vídeo: segmentos com `start`, `end` e `text` já traduzido."""
+    """Dubla vídeo (saída .mp4) ou áudio (saída .m4a/.wav): segmentos com `start`, `end`, `text`."""
     try:
         consent.require_consent(confirm_own_voice, ref)
         consent.require_license(accept_cpml)

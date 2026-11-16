@@ -50,7 +50,8 @@ def load_segments(path: Path) -> list[Segment]:
 def dub(video: Path, segments: list[Segment], ref: Path, lang: str, out: Path, synth: Synth,
         workdir: Path, mapping: dict[str, str] | None = None, takes: int = 3,
         keep_original: float = 0.0, max_up: float = 1.25) -> dict:
-    """Gera cada fala, acelera (no máximo `max_up`) para caber e mixa no vídeo."""
+    """Gera cada fala, acelera (no máximo `max_up`) para caber e mixa no vídeo ou no áudio."""
+    audio.check_output(audio.has_video(video), out)  # falha cedo, antes de gastar tempo no motor
     workdir.mkdir(parents=True, exist_ok=True)
     parts: list[tuple[Path, float]] = []
     report: list[dict] = []

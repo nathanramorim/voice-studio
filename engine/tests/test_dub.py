@@ -26,6 +26,7 @@ def test_segmentos_validos_e_invalidos(tmp_path):
 
 def test_dub_acelera_no_limite_e_aponta_estouro(tmp_path, ref, monkeypatch):
     calls = {}
+    monkeypatch.setattr(audio, "has_video", lambda path: True)
     monkeypatch.setattr(audio, "speed_up", lambda s, d, f: (write_wav(d, 1.0),
                                                             calls.setdefault("f", []).append(f)))
     monkeypatch.setattr(audio, "mix_dub", lambda v, parts, out, keep: calls.update(

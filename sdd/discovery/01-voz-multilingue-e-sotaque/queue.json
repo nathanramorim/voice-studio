@@ -2,7 +2,7 @@
   "feature_id": "feat-01",
   "branch": "feat/01-voz-multilingue-e-sotaque",
   "spec_status": "reviewed",
-  "updated_at": "2026-11-16T16:49:14Z",
+  "updated_at": "2026-11-16T16:50:21Z",
   "items": [
     {
       "task_id": "feat-01-01-modulo-profile",
@@ -80,14 +80,14 @@
       "task_id": "feat-01-05-entrada-audio-ou-video",
       "title": "feat-01-05-entrada-audio-ou-video — Dublagem com entrada e saída de áudio ou vídeo",
       "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-05-entrada-audio-ou-video.md",
-      "status": "queued",
+      "status": "review_pending",
       "rules": [
         "SEG-03",
         "DUP-03",
         "TST-01"
       ],
       "skills_used": [],
-      "attempts": 0
+      "attempts": 1
     },
     {
       "task_id": "feat-01-06-traduzir",
