@@ -10,6 +10,8 @@ import typer
 
 from . import audio, consent, vocab
 from . import dub as dub_mod
+from . import falar as falar_mod
+from . import languages as languages_mod
 from . import profile as profile_mod
 from . import synth as synth_mod
 from . import transcribe as transcribe_mod
@@ -82,6 +84,37 @@ def speak(lines: Path, ref: REF, confirm_own_voice: OWN = False, accept_cpml: CP
                                      encoding="utf-8")
     bad = [r["line"] for r in report if not r["ok"]]
     typer.echo(f"{len(report)} falas em {out}/." + (f" Confira as linhas {bad}." if bad else ""))
+
+
+@app.command()
+def falar(texto: Annotated[str | None, typer.Argument(help="Texto a falar.")] = None,
+          arquivo: Annotated[Path | None, typer.Option(
+              "--arquivo", help="falas.json (lista de textos) no lugar do texto.")] = None,
+          perfil: Annotated[str | None, typer.Option("--perfil", help="Nome do perfil.")] = None,
+          ref: Annotated[Path | None, typer.Option(
+              "--ref", help="Amostra avulsa (alternativa ao perfil).")] = None,
+          confirm_own_voice: OWN = False, accept_cpml: CPML = False,
+          lang: str = "pt", out: Annotated[Path, typer.Option("--out", "-o")] = Path("out"),
+          takes: Annotated[int | None, typer.Option(
+              "--takes", help="Variações por fala (padrão: ajuste do perfil).")] = None,
+          perfis_dir: PERFIS_DIR = None) -> None:
+    """Fala um texto com a voz do perfil (ou de uma amostra avulsa)."""
+    try:
+        texts = falar_mod.load_texts(texto, arquivo)
+        voz = falar_mod.resolve(perfil, ref, confirm_own_voice, perfis_dir)
+        languages_mod.require(lang)
+        consent.require_license(accept_cpml)  # antes de tocar no motor
+        speed = voz["ajustes"]["velocidade"]
+        report = falar_mod.run(texts, voz, lang, out, synth_mod.xtts_synth(speed), takes)
+    except VoiceError as exc:
+        _fail(exc)
+    (out / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2),
+                                     encoding="utf-8")
+    typer.echo(f"{len(report)} falas em {out}/.")
+    for warning in falar_mod.avisos(lang, report):
+        typer.secho(f"Aviso: {warning}", fg=typer.colors.YELLOW, err=True)
+    if any(not r["ok"] for r in report):
+        raise typer.Exit(2)  # código informativo: há linha suspeita (relatório gravado)
 
 
 @app.command()

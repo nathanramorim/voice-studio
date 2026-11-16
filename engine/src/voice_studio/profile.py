@@ -24,6 +24,24 @@ DEFAULT_ADJUSTS = {"velocidade": 1.08, "takes": 3}
 Extract = Callable[[Path, Path, float, float], None]
 
 
+def check_adjusts(ajustes: object) -> dict:
+    """Valida `ajustes`: `velocidade` número > 0, `takes` inteiro >= 1; chave desconhecida é erro."""
+    if not isinstance(ajustes, dict):
+        raise VoiceError("Ajustes do perfil inválidos: esperado um objeto JSON.")
+    unknown = sorted(set(ajustes) - set(DEFAULT_ADJUSTS))
+    if unknown:
+        raise VoiceError(f"Ajustes desconhecidos no perfil: {', '.join(map(str, unknown))} "
+                         f"(aceitos: {', '.join(DEFAULT_ADJUSTS)}).")
+    out = dict(DEFAULT_ADJUSTS) | ajustes
+    speed, takes = out["velocidade"], out["takes"]
+    if isinstance(speed, bool) or not isinstance(speed, int | float) or not speed > 0 \
+            or speed == float("inf"):
+        raise VoiceError("Ajuste 'velocidade' inválido: use um número maior que zero.")
+    if isinstance(takes, bool) or not isinstance(takes, int) or takes < 1:
+        raise VoiceError("Ajuste 'takes' inválido: use um inteiro maior ou igual a 1.")
+    return out
+
+
 def default_base() -> Path:
     """`VOICE_STUDIO_HOME` (se definida) ou `~/.voice-studio/perfis`."""
     env = os.environ.get(HOME_ENV)
@@ -65,7 +83,7 @@ def create(nome: str, origem: Path, confirm: bool, base: Path | None = None,
     folder = root / nome
     if folder.exists():
         raise VoiceError(f"O perfil '{nome}' já existe; escolha outro nome (nada é sobrescrito).")
-    settings = {**DEFAULT_ADJUSTS, **(ajustes or {})}
+    settings = check_adjusts(ajustes or {})
     now = datetime.now(UTC).isoformat(timespec="seconds")
     data = {
         "nome": nome,
@@ -114,6 +132,7 @@ def load(nome: str, base: Path | None = None) -> dict:
         raise VoiceError(f"perfil.json inválido no perfil '{nome}'.")
     if not (folder / SAMPLE_FILE).is_file():
         raise VoiceError(f"Perfil '{nome}' sem a amostra {SAMPLE_FILE}.")
+    data["ajustes"] = check_adjusts(data.get("ajustes", {}))
     data["amostra_path"] = str(folder / SAMPLE_FILE)
     return data
 
