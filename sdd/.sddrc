@@ -1,0 +1,12 @@
+{
+  "project": "voice-studio",
+  "version": "4.8.0",
+  "agents": ["claude", "gemini"],
+  "telemetry": {
+    "enabled": true,
+    "anonymous": true,
+    "endpoint": "local"
+  },
+  "lang": "pt-BR",
+  "naming_convention": "sequencial"
+}

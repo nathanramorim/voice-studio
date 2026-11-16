@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "forge inbox --unread --hook",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}
