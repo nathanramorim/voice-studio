@@ -2,7 +2,7 @@
   "feature_id": "feat-01",
   "branch": "feat/01-voz-multilingue-e-sotaque",
   "spec_status": "reviewed",
-  "updated_at": "2026-11-16T16:55:49Z",
+  "updated_at": "2026-11-16T17:01:02Z",
   "items": [
     {
       "task_id": "feat-01-01-modulo-profile",
@@ -108,7 +108,7 @@
       "task_id": "feat-01-06-traduzir",
       "title": "feat-01-06-traduzir — `traduzir`: áudio ou vídeo para outro idioma, com a voz do perfil",
       "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-06-traduzir.md",
-      "status": "review_pending",
+      "status": "approved",
       "rules": [
         "VOZ-01",
         "VOZ-03",
@@ -117,20 +117,30 @@
         "TST-01"
       ],
       "skills_used": [],
-      "attempts": 1
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Re-revisão da feat-01-06 (commits 666e128 + d7a5d99): os dois achados anteriores foram resolvidos. check_out recusa saída igual à entrada (via resolve, seguindo symlinks, mesmo com --sobrescrever) e saída existente sem --sobrescrever, antes de xtts_synth, em traduzir e em dub, com testes que afirmam que o motor não é tocado e que a entrada fica intacta. prepare grava segments.json com abertura exclusiva e converte OSError em VoiceError (exit 1, sem traceback). VOZ-01/02/03 reconferidos; 79 testes passam. Observações: a checagem do dub vive na CLI e não em dub.dub (aceitável); report.json ainda pode ser regravado (comportamento anterior, desprezível)."
+      }
     },
     {
       "task_id": "feat-01-07-skill-e-adaptadores",
       "title": "feat-01-07-skill-e-adaptadores — Skill, comandos e adaptadores nos três agentes",
       "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-07-skill-e-adaptadores.md",
-      "status": "review_pending",
+      "status": "approved",
       "rules": [
         "VOZ-08",
         "DUP-10",
         "ARQ-06"
       ],
       "skills_used": [],
-      "attempts": 1
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Re-revisão da feat-01-07 (commits 3a838c3 + 7119f41): os dois achados anteriores foram resolvidos. A convenção de saída (código 2 só em falar e traduzir; speak e dub saem 0 e pedem leitura do report.json) está igual no help, no README e no SKILL.md e bate com o código. Manifestos do plugin atualizados sem prometer sotaque e sem afirmar idiomas além de pt e en como validados; teste exige name e description não vazios. Reconferido: adaptadores só apontam para o SKILL.md; nenhum texto manda passar --confirm-own-voice ou --accept-cpml sem perguntar ao usuário; honestidade mantida (agy, Codex e uso real com voz seguem não validados). Observação: vale uma nota futura dizendo ao agente para perguntar antes de passar --sobrescrever."
+      }
     },
     {
       "task_id": "feat-01-08-qa-manual",
