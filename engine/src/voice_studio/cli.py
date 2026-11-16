@@ -10,6 +10,7 @@ import typer
 
 from . import audio, consent, vocab
 from . import dub as dub_mod
+from . import profile as profile_mod
 from . import synth as synth_mod
 from . import transcribe as transcribe_mod
 from .errors import VoiceError
@@ -22,7 +23,13 @@ OWN = Annotated[bool, typer.Option("--confirm-own-voice",
                                    help="Confirmo que a voz da amostra é minha ou autorizada.")]
 CPML = Annotated[bool, typer.Option("--accept-cpml",
                                     help="Aceito a licença Coqui CPML do modelo XTTS-v2.")]
+PERFIS_DIR = Annotated[Path | None, typer.Option(
+    "--perfis-dir", help="Pasta dos perfis (padrão: VOICE_STUDIO_HOME ou ~/.voice-studio/perfis).")]
 VOCAB = Annotated[Path | None, typer.Option("--vocab", help="pronuncia.json (opcional).")]
+
+
+perfil_app = typer.Typer(no_args_is_help=True, help="Perfis de voz (amostra + consentimento).")
+app.add_typer(perfil_app, name="perfil")
 
 
 def _fail(exc: VoiceError) -> None:
@@ -96,6 +103,39 @@ def dub(video: Path, segments: Path, ref: REF, confirm_own_voice: OWN = False,
     if report["overflow"]:
         typer.secho(f"Atenção: segmentos {report['overflow']} ficaram maiores que o tempo "
                     "disponível; encurte o texto traduzido.", fg=typer.colors.YELLOW)
+
+
+@perfil_app.command("criar")
+def perfil_criar(nome: str, origem: Path, confirm_own_voice: OWN = False,
+                 start: float = 0.0, duration: float = 28.0,
+                 perfis_dir: PERFIS_DIR = None) -> None:
+    """Cria um perfil a partir de um áudio ou vídeo da voz (exige consentimento)."""
+    try:
+        profile_mod.create(nome, origem, confirm_own_voice, perfis_dir, start, duration)
+    except VoiceError as exc:
+        _fail(exc)
+    typer.echo(f"Perfil '{nome}' criado. Ouça {profile_mod.SAMPLE_FILE} antes de usar.")
+
+
+@perfil_app.command("listar")
+def perfil_listar(perfis_dir: PERFIS_DIR = None) -> None:
+    """Lista os perfis existentes."""
+    try:
+        names = profile_mod.list_profiles(perfis_dir)
+    except VoiceError as exc:
+        _fail(exc)
+    typer.echo("\n".join(names) if names else "Nenhum perfil.")
+
+
+@perfil_app.command("mostrar")
+def perfil_mostrar(nome: str, perfis_dir: PERFIS_DIR = None) -> None:
+    """Mostra os dados do perfil (sem o caminho da amostra, só o nome do arquivo)."""
+    try:
+        data = profile_mod.load(nome, perfis_dir)
+    except VoiceError as exc:
+        _fail(exc)
+    data.pop("amostra_path", None)
+    typer.echo(json.dumps(data, ensure_ascii=False, indent=2))
 
 
 def main() -> None:

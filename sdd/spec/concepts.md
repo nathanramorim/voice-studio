@@ -10,3 +10,4 @@ Regra `DUP-01`: **Um conceito = uma casa.** Antes de criar uma nova entidade, m�
 | Motor de voz | `synth` | `Synth` | `speak`, `xtts_synth` | Motor injetável (`VOZ-09`) |
 | Segmento de dublagem | `dub` | `Segment` | `load_segments`, `dub` | |
 | Processos externos (ffmpeg, whisper) | `audio`, `transcribe` | — | `run` | Sempre lista de argumentos (`SEG-03`) |
+| Perfil de voz | `profile` | `dict` (`perfil.json`) | `create`, `load`, `list_profiles` | Pasta fora do repositório (ADR-0002); nenhum outro módulo grava perfil |
