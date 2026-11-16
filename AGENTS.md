@@ -15,3 +15,6 @@ Fonte única da skill: `skills/voice-studio/SKILL.md` (e `skills/voice-studio/re
 - A pronúncia vem do vocabulário (grafia falada só no texto da voz). A transcrição não prova pronúncia: peça ao usuário para ouvir.
 - Não prometa sotaque: ele vem da amostra e do vocabulário.
 - Siga o Forge SDD: nunca comite em `main`; uma branch por iniciativa (`sdd/discovery/`); `forge brief` antes de planejar.
+
+## Comandos de voz
+`voice-studio perfil|falar|traduzir` (e `sample|speak|transcribe|dub`), em `engine/`; corpo completo só em `skills/voice-studio/SKILL.md`.

@@ -25,3 +25,4 @@ voice-studio: stack python. Fluxo por feature em `sdd/FLOW.md`.
 
 ## Sobre este projeto
 voice-studio clona a voz do próprio usuário (local, grátis) para narrar texto digitado e dublar áudio/vídeo para outro idioma, com idioma, sotaque (pt-BR mineiro incluso) e pronúncia. Skill única em `skills/voice-studio/SKILL.md`; regras do domínio `VOZ-01` a `VOZ-09` na Constitution e em `.agents/rules/voz-*.md`. Consentimento da voz e aceite da licença do modelo são sempre do usuário.
+Comandos de voz: `/perfil-de-voz`, `/falar`, `/traduzir` (atalhos: `/clonar-voz`, `/dublar`); detalhes só em `skills/voice-studio/SKILL.md`.

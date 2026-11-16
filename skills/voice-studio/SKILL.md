@@ -1,6 +1,6 @@
 ---
 name: voice-studio
-description: Use para clonar a voz do usuário (local e gratuito), gerar narração em português ou inglês com ela, ou dublar um vídeo de português para inglês. Ative quando pedirem "clonar minha voz", "narrar com a minha voz", "voz virtual", "dublar", "traduzir o vídeo para inglês", "versão em inglês do reel", ou quando uma palavra sair com a pronúncia errada na voz gerada.
+description: Use para clonar a voz do usuário (local e gratuito), criar um perfil de voz, falar um texto digitado em vários idiomas com ela, ou traduzir e dublar áudio ou vídeo. Ative quando pedirem "clonar minha voz", "narrar com a minha voz", "voz virtual", "perfil de voz", "falar este texto", "dublar", "traduzir o áudio", "traduzir o vídeo para inglês", "versão em inglês do reel", ou quando uma palavra sair com a pronúncia errada na voz gerada.
 ---
 
 # voice-studio
@@ -17,19 +17,53 @@ No Mac com Apple Silicon use `--python cpython-3.11-macos-aarch64-none` (sem iss
 
 ## Antes de qualquer geração (obrigatório)
 
-1. **Consentimento da voz.** Só clone a voz do próprio usuário ou de alguém com autorização. Pergunte uma vez; depois passe `--confirm-own-voice`. Nunca passe a flag por conta própria.
-2. **Licença do modelo.** Explique que o XTTS-v2 é CPML (não comercial) e peça o aceite. Só então use `--accept-cpml`. Para uso comercial, sugira outro motor (ex.: Chatterbox, MIT).
+1. **Consentimento da voz.** Só clone a voz do próprio usuário ou de alguém com autorização. Pergunte ao usuário e só então passe `--confirm-own-voice`. Nunca passe a flag por conta própria.
+2. **Licença do modelo.** Explique que o XTTS-v2 é CPML (não comercial) e peça o aceite. Só então use `--accept-cpml`; nunca por conta própria. Para uso comercial, sugira outro motor (ex.: Chatterbox, MIT).
 3. **Privacidade.** Amostra e áudios gerados ficam na pasta de trabalho do usuário. Nunca versionar nem publicar (o `.gitignore` já bloqueia `wav`, `mp3`, `m4a`, `mp4`).
 
 ## Fluxos
 
-### Amostra de voz
+### Perfil de voz (padrão)
+O perfil guarda a amostra tratada, o consentimento e o vocabulário por idioma, fora do repositório (`~/.voice-studio/perfis`, ou `VOICE_STUDIO_HOME`).
+```bash
+voice-studio perfil criar nathan gravacao.mov --confirm-own-voice --start 0 --duration 28
+voice-studio perfil vocab nathan pronuncia-pt.json --lang pt
+voice-studio perfil listar
+voice-studio perfil mostrar nathan
+```
+**Amostra mineira:** para o português mineiro, a amostra deve ser de fala contínua do próprio usuário falando do jeito dele; o sotaque vem dela e do vocabulário (`exemplos/pronuncia-pt.json` é ponto de partida), nunca de uma promessa do modelo. Peça ao usuário para ouvir `amostra.wav` do perfil antes de usar.
+
+### Falar um texto
+```bash
+voice-studio falar "Vamos usar a IA hoje" --perfil nathan --lang pt --accept-cpml -o out
+voice-studio falar --arquivo falas.json --perfil nathan --lang en --accept-cpml -o out
+```
+`--ref AUDIO --confirm-own-voice` usa uma amostra avulsa no lugar do perfil. Gera `out/line-NN.wav` e `out/report.json` (com `validated`). Usa o vocabulário do perfil para o idioma da fala.
+
+### Traduzir áudio ou vídeo (duas fases)
+1. `voice-studio traduzir entrada.mp4 --para en --perfil nathan [--de pt] --model ggml-small.bin` transcreve (local) e grava `segments.json` com `source` e `text` vazio.
+2. **Você traduz**: para cada segmento, escreva a tradução no campo `text` (mantenha `start`, `end` e `source`). Frases curtas e naturais, sem markdown. Só texto passa por você; nunca anexe o áudio.
+3. `voice-studio traduzir entrada.mp4 --para en --perfil nathan --segmentos segments.json --accept-cpml [--out dublado.mp4]` dubla com a voz do perfil. Entrada só áudio gera `.m4a` ou `.wav`; vídeo gera `.mp4`.
+4. Leia o `report.json`: `overflow` (segmentos que não couberam; encurte o texto e rode de novo) e `suspect_takes` (fala suspeita; confira ou regere). Segmento sem tradução falha apontando o número.
+
+## Idiomas e `validated`
+`pt`, `en`, `es`, `fr`, `de` e `it`. Só `pt` e `en` foram medidos com falas reais (`validated: true`). Nos demais o relatório traz `validated: false` e a CLI avisa: diga ao usuário que a qualidade não foi verificada e peça para ouvir com atenção.
+
+## Códigos de saída
+`0` ok; `1` erro de uso ou validação (nada foi gerado); `2` gerou, mas há fala(s) suspeita(s) (`ok: false`): confira o `report.json`.
+
+## Sotaque (VOZ-07)
+O sotaque vem da amostra e do vocabulário, não do modelo; nunca prometa sotaque. A transcrição não prova a pronúncia (o Whisper normaliza marcas). Peça ao usuário para ouvir.
+
+### Comandos de baixo nível
+
+#### Amostra de voz
 ```bash
 voice-studio sample gravacao.mov -o voice-ref.wav --start 0 --duration 28
 ```
 Escolha um trecho de fala contínua, sem música e sem outra voz (6 a 30 s). **Peça ao usuário para ouvir** antes de usar.
 
-### Narração
+#### Narração
 `falas.json` é uma lista de textos. Um arquivo `pronuncia.json` (opcional) troca a grafia da tela pela grafia falada.
 ```bash
 voice-studio speak falas.json --ref voice-ref.wav --lang pt --takes 3 \
@@ -37,7 +71,7 @@ voice-studio speak falas.json --ref voice-ref.wav --lang pt --takes 3 \
 ```
 Gera `out/line-NN.wav` e `out/report.json`. O motor gera N variações por fala e fica com a mais próxima da duração esperada; falas de duração absurda (o modelo às vezes alucina, 3 s viram 10 s) são descartadas. Se `ok` for `false` na linha, todas as variações saíram suspeitas: gere de novo ou mude o texto.
 
-### Dublagem português -> inglês
+#### Dublagem manual (`transcribe` + `dub`)
 1. `voice-studio transcribe video.mp4 -o segments.json --model ggml-small.bin` (precisa de `whisper-cli`: `brew install whisper-cpp`, e um modelo ggml).
 2. **Você traduz**: para cada segmento, escreva o inglês no campo `text` (mantenha `start` e `end`). Frases curtas e naturais; o inglês costuma ser mais curto que o português, mas cuide dos segmentos longos. Não use markdown.
 3. `voice-studio dub video.mp4 segments.json --ref voice-ref.wav --lang en --vocab pronuncia-en.json --confirm-own-voice --accept-cpml -o dublado.mp4`

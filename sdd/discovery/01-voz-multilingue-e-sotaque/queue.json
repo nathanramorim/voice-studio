@@ -2,7 +2,7 @@
   "feature_id": "feat-01",
   "branch": "feat/01-voz-multilingue-e-sotaque",
   "spec_status": "reviewed",
-  "updated_at": "2026-11-16T16:54:36Z",
+  "updated_at": "2026-11-16T16:55:49Z",
   "items": [
     {
       "task_id": "feat-01-01-modulo-profile",
@@ -123,14 +123,14 @@
       "task_id": "feat-01-07-skill-e-adaptadores",
       "title": "feat-01-07-skill-e-adaptadores — Skill, comandos e adaptadores nos três agentes",
       "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-07-skill-e-adaptadores.md",
-      "status": "queued",
+      "status": "review_pending",
       "rules": [
         "VOZ-08",
         "DUP-10",
         "ARQ-06"
       ],
       "skills_used": [],
-      "attempts": 0
+      "attempts": 1
     },
     {
       "task_id": "feat-01-08-qa-manual",

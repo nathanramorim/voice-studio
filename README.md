@@ -66,29 +66,32 @@ No **Mac com Apple Silicon**, use `--python cpython-3.11-macos-aarch64-none` (se
 
 ## Como usar
 
-**1. Amostra da sua voz** (a partir de uma gravação sua)
+**1. Perfil da sua voz** (a partir de uma gravação sua; guarda a amostra e o consentimento)
 
 ```bash
-voice-studio sample minha-gravacao.mov -o voice-ref.wav
+voice-studio perfil criar nathan minha-gravacao.mov --confirm-own-voice
+voice-studio perfil vocab nathan exemplos/pronuncia-pt.json --lang pt
 ```
 
-**2. Narração: você digita o texto, ele fala com a sua voz**
+**2. Falar um texto com a voz do perfil, no idioma que quiser**
 
 ```bash
-voice-studio speak exemplos/falas.json --ref voice-ref.wav --lang pt \
-  --vocab exemplos/pronuncia-pt.json --takes 3 --confirm-own-voice --accept-cpml -o out
+voice-studio falar "Vamos usar a IA hoje" --perfil nathan --lang pt --accept-cpml -o out
 ```
 
-**3. Dublagem português → inglês**
+**3. Traduzir um áudio ou vídeo com a sua voz** (o agente traduz entre as duas fases)
 
 ```bash
-voice-studio transcribe video.mp4 -o segments.json --model ggml-small.bin
-# traduza `source` para `text` (no agente, a skill faz isso por você)
-voice-studio dub video.mp4 segments.json --ref voice-ref.wav --lang en \
-  --vocab exemplos/pronuncia-en.json --confirm-own-voice --accept-cpml -o dublado.mp4
+voice-studio traduzir video.mp4 --para en --perfil nathan --model ggml-small.bin
+# traduza `source` para `text` em segments.json (no agente, a skill faz isso por você)
+voice-studio traduzir video.mp4 --para en --perfil nathan --segmentos segments.json --accept-cpml
 ```
 
-No Claude Code, `/clonar-voz` e `/dublar` conduzem esses passos e pedem o consentimento e o aceite da licença.
+No Claude Code, `/perfil-de-voz`, `/falar` e `/traduzir` conduzem esses passos e pedem o consentimento e o aceite da licença (`/clonar-voz` e `/dublar` continuam como atalhos). Os comandos de baixo nível `sample`, `speak`, `transcribe` e `dub` seguem disponíveis.
+
+**Idiomas.** `pt`, `en`, `es`, `fr`, `de` e `it`. Só `pt` e `en` foram medidos com falas reais; nos demais o relatório traz `validated: false` e a CLI avisa.
+
+**Códigos de saída.** `0` ok. `1` erro de uso ou validação (nada foi gerado). `2` gerou, mas há fala(s) suspeita(s) (`ok: false`): confira o `report.json`.
 
 **Pronúncia.** O `pronuncia.json` é um mapa `{"como aparece": "como falar"}`. Troca por palavra inteira, só no texto da voz. Siglas em maiúsculas só casam em maiúsculas (`"IA"` não troca o verbo `ia`). `exemplos/pronuncia-pt.json` registra o sotaque mineiro do autor; use como ponto de partida.
 
@@ -117,10 +120,11 @@ Os pesos do modelo **não** estão neste repositório: são baixados na primeira
 
 ## Status e limites
 
-- **Testado:** `speak` em português e inglês pela linha de comando, no macOS (Apple Silicon), e 17 testes automáticos (com sintetizador simulado, sem baixar o modelo).
-- **Ainda não validado:** a dublagem completa (`transcribe` + `dub`) com um vídeo real; a instalação pelo marketplace do Claude Code; o uso em agy e Codex.
+- **Testado:** `speak` em português e inglês pela linha de comando, no macOS (Apple Silicon), e testes automáticos (com sintetizador simulado, sem baixar o modelo).
+- **Ainda não validado:** perfil, `falar` e `traduzir` com voz e vídeo reais (a verificação manual é feita ouvindo); a instalação pelo marketplace do Claude Code; agy e Codex: instruções prontas, não validado (veja [`docs/validacao-multiagente.md`](docs/validacao-multiagente.md)).
+- **Idiomas além de `pt` e `en`:** qualidade não verificada (`validated: false`).
 - **Marcas difíceis** (como "Forge SDD") pedem ajustar a grafia falada até soar certo.
-- **Planejado:** perfis por idioma e sotaque (incluindo português mineiro) e entrada de áudio com texto digitado e idioma de destino num só comando.
+- **Planejado:** validação com falas reais dos demais idiomas.
 
 ## Desenvolvimento
 

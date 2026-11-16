@@ -19,7 +19,8 @@ from . import transcribe as transcribe_mod
 from .errors import VoiceError
 
 app = typer.Typer(add_completion=False, no_args_is_help=True,
-                  help="Voz clonada local: narração e dublagem português -> inglês.")
+                  help="Voz clonada local: perfil, fala e tradução de áudio/vídeo. Saída: 0 ok; 1 erro de uso ou "
+                     "validação (nada gerado); 2 gerou, mas há fala suspeita (veja report.json).")
 
 REF = Annotated[Path, typer.Option("--ref", help="Áudio de referência (6 a 30 s da voz).")]
 OWN = Annotated[bool, typer.Option("--confirm-own-voice",
