@@ -2,13 +2,13 @@
   "feature_id": "feat-01",
   "branch": "feat/01-voz-multilingue-e-sotaque",
   "spec_status": "reviewed",
-  "updated_at": "2026-11-16T16:42:24Z",
+  "updated_at": "2026-11-16T16:46:23Z",
   "items": [
     {
       "task_id": "feat-01-01-modulo-profile",
       "title": "feat-01-01-modulo-profile — Perfil de voz (criar, listar, carregar, validar)",
       "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-01-modulo-profile.md",
-      "status": "review_pending",
+      "status": "approved",
       "rules": [
         "SEG-01",
         "SEG-02",
@@ -19,13 +19,18 @@
         "TST-01"
       ],
       "skills_used": [],
-      "attempts": 1
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Commit 87fc17d conforme (SEG-01, SEG-02, VOZ-01, VOZ-04, ARQ-10, DUP-01, TST-01). Evidência literal confirmada: extract injetável, base recusada se houver .git em qualquer pai (create, load e list_profiles), mkdir sem exist_ok com rmtree em falha, load valida nome/consentimento/amostra e limita perfil.json a 64 KB, CLI mostrar não imprime caminho da amostra, consentimento só vem da flag --confirm-own-voice. Observações menores não bloqueantes: (a) symlink pendente em \u003cbase\u003e/\u003cnome\u003e pode levantar FileExistsError cru em vez de VoiceError; (b) ajustes aceita chaves e tipos arbitrários sem validar."
+      }
     },
     {
       "task_id": "feat-01-02-catalogo-de-idiomas",
       "title": "feat-01-02-catalogo-de-idiomas — Catálogo único de idiomas e guarda por idioma",
       "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-02-catalogo-de-idiomas.md",
-      "status": "review_pending",
+      "status": "approved",
       "rules": [
         "VOZ-06",
         "VOZ-07",
@@ -34,7 +39,12 @@
         "TST-01"
       ],
       "skills_used": [],
-      "attempts": 1
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Commit 253ad0e conforme (VOZ-06, VOZ-07, DUP-01, DUP-04, TST-01, COD-03, COD-04). guard.CPS, guard.DEFAULT_CPS e synth.LANGS removidos sem resto duplicado; guard.expected_seconds fora do catálogo levanta VoiceError e nenhum chamador quebra (speak chama languages.require antes); testes antigos de guard e speak intactos; pt 15,0 e en 12,5 batem com os valores medidos antes; es, fr, de, it estimados com validated=False e comentário honesto; concepts.md coerente com o código; 38 testes e ruff passam."
+      }
     },
     {
       "task_id": "feat-01-03-vocabulario-por-idioma",
