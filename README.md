@@ -17,8 +17,9 @@
 
 O **voice-studio** clona a sua voz **no seu próprio computador**. Você dá uma amostra de áudio (de 6 a 30 segundos falando) e ele:
 
+- **guarda a sua voz num perfil** (amostra, consentimento e vocabulário de pronúncia por idioma);
 - **fala o texto que você digitar**, com a sua voz (narração para reels, vídeos e apresentações);
-- **dubla um vídeo de português para inglês**, com a sua voz, encaixando cada fala no tempo do vídeo.
+- **traduz um áudio ou vídeo para outro idioma** com a sua voz, encaixando cada fala no tempo da mídia (o inglês é o idioma validado).
 
 Funciona como plugin do **Claude Code**, com instruções prontas também para **agy (Antigravity)** e **Codex**. A tradução do texto é feita pelo agente; o áudio nunca sai da sua máquina.
 
@@ -32,16 +33,21 @@ Funciona como plugin do **Claude Code**, com instruções prontas também para *
 | 💸 **Grátis** | Usa o modelo XTTS-v2 e ferramentas abertas, sem assinatura de serviço de voz. |
 | 🗣️ **Pronúncia sob controle** | Um vocabulário troca "IA" por "IÁ", "PR" por "PIER" e assim por diante, só na fala; a legenda não muda. |
 | 🛡️ **Falas conferidas** | Cada fala gera várias versões e descarta as defeituosas (uma fala de 3 s que sai com 10 s, por exemplo). |
-| 🌎 **Dublagem português → inglês** | Transcreve, o agente traduz e a sua voz fala em inglês no tempo do vídeo. |
+| 👤 **Perfis de voz** | Um perfil por voz ou sotaque, com amostra, consentimento e vocabulário por idioma. |
+| 🌎 **Tradução de áudio ou vídeo** | Transcreve, o agente traduz e a sua voz fala no idioma escolhido, no tempo da mídia (áudio entra e sai como áudio; vídeo, como vídeo). |
 
 ## Antes de começar
 
-- [`uv`](https://docs.astral.sh/uv/), `ffmpeg` e, para transcrever vídeos, `whisper-cpp` com um modelo ggml (por exemplo `ggml-small.bin`): `brew install ffmpeg whisper-cpp`.
-- Espaço para o modelo de voz (cerca de 2 GB, baixado na primeira geração).
-- Um agente com suporte a skills (Claude Code, agy ou Codex).
-- Uma **amostra da sua voz** (6 a 30 s de fala contínua, sem música nem outras vozes).
+| Requisito | Para quê |
+|---|---|
+| [`uv`](https://docs.astral.sh/uv/) | Instala o Python 3.11 e as dependências do motor (você não precisa instalar o Python). |
+| `ffmpeg` (inclui o `ffprobe`) | Corta, acelera e mixa o áudio; detecta se a entrada tem vídeo. `brew install ffmpeg`. |
+| `whisper-cpp` e um modelo ggml (ex.: `ggml-small.bin`) | **Só para transcrever** (`traduzir`, `transcribe`). `brew install whisper-cpp`. |
+| Extra `xtts` | Traz o motor de voz e o PyTorch. É instalado com `--extra xtts`; o modelo (cerca de 2 GB) é baixado na primeira geração. |
+| Um agente com suporte a skills | Claude Code, agy ou Codex. Sem agente, a linha de comando funciona sozinha. |
+| Uma **amostra da sua voz** | 6 a 30 s de fala contínua, sem música nem outras vozes. |
 
-Roda em CPU: de 20 a 60 segundos por fala.
+Roda em CPU: de 20 a 60 segundos por fala. Os perfis ficam em `~/.voice-studio/perfis/` (mude com `VOICE_STUDIO_HOME` ou `--perfis-dir`), sempre **fora** de qualquer repositório git.
 
 ## Instalação
 
@@ -89,6 +95,8 @@ voice-studio traduzir video.mp4 --para en --perfil nathan --segmentos segments.j
 
 No Claude Code, `/perfil-de-voz`, `/falar` e `/traduzir` conduzem esses passos e pedem o consentimento e o aceite da licença (`/clonar-voz` e `/dublar` continuam como atalhos). Os comandos de baixo nível `sample`, `speak`, `transcribe` e `dub` seguem disponíveis.
 
+**Saída nunca sobrescreve a entrada.** `traduzir` e `dub` recusam um `--out` igual à entrada e uma saída que já existe; para substituir uma saída existente, passe `--sobrescrever` (a entrada nunca é sobrescrita).
+
 **Idiomas.** `pt`, `en`, `es`, `fr`, `de` e `it`. Só `pt` e `en` foram medidos com falas reais; nos demais o relatório traz `validated: false` e a CLI avisa.
 
 **Códigos de saída.** `0` ok. `1` erro de uso ou validação (nada foi gerado). `2` só em `falar` e `traduzir`: gerou, mas há fala(s) suspeita(s) (`ok: false`); confira o `report.json`. `speak` e `dub` (baixo nível) saem `0` mesmo com linha suspeita ou estouro de tempo: leia o `report.json` ou o resumo impresso.
@@ -116,6 +124,7 @@ Os pesos do modelo **não** estão neste repositório: são baixados na primeira
 
 | Versão | Novidades |
 |---|---|
+| **0.2.0** (em preparação, branch `feat/01-voz-multilingue-e-sotaque`) | Perfis de voz com consentimento registrado, vocabulário de pronúncia por idioma, catálogo de 6 idiomas (`pt` e `en` validados), comandos `falar` e `traduzir`, entrada e saída de áudio ou vídeo, proteção contra sobrescrever a entrada (`--sobrescrever`), skill única com adaptadores para Claude Code, agy e Codex. Falta o QA manual com voz real. |
 | **0.1.0** | Primeira versão: voz clonada local (XTTS-v2), narração com vocabulário de pronúncia, várias versões por fala com guarda de duração, dublagem por segmento, consentimento e aviso de licença, plugin com skill e os comandos `/clonar-voz` e `/dublar`. |
 
 ## Status e limites
@@ -126,15 +135,16 @@ Os pesos do modelo **não** estão neste repositório: são baixados na primeira
 - **Marcas difíceis** (como "Forge SDD") pedem ajustar a grafia falada até soar certo.
 - **Planejado:** validação com falas reais dos demais idiomas.
 
-## Desenvolvimento
+## Desenvolvimento e contribuição
 
 ```bash
+export UV_PROJECT_ENVIRONMENT=$HOME/.cache/voice-studio-venv   # ambiente fora do repositório
 cd engine
 uv run --python 3.11 --group dev pytest -q
 uv run --python 3.11 --group dev ruff check .
 ```
 
-O projeto segue o [Forge SDD](https://forge-sdd.org): regras em `sdd/memory/constitution.md` (IDs `VOZ-01` a `VOZ-09`) e decisões em `sdd/spec/adr/`.
+O projeto segue o [Forge SDD](https://forge-sdd.org): regras em `sdd/memory/constitution.md` (IDs `VOZ-01` a `VOZ-09`) e decisões em `sdd/spec/adr/`. Para contribuir, leia o [`CONTRIBUTING.md`](CONTRIBUTING.md) e o [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md); para falhas de segurança ou de privacidade da voz, o [`SECURITY.md`](SECURITY.md).
 
 ## Licença
 
