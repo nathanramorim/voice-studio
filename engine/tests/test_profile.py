@@ -99,3 +99,43 @@ def test_listar_em_ordem_e_ignora_pastas_sem_perfil(tmp_path, ref):
     make("alfa", base, ref)
     (base / "lixo").mkdir()
     assert profile.list_profiles(base) == ["alfa", "zeta"]
+
+
+def test_seguranca_symlink_pendente_vira_erro_claro(tmp_path, ref):
+    base = tmp_path / "perfis"
+    base.mkdir()
+    (base / "nathan").symlink_to(tmp_path / "nao-existe")
+    with pytest.raises(VoiceError, match="link quebrado"):
+        make("nathan", base, ref)
+
+
+def write_vocab(path, data):
+    path.write_text(json.dumps(data), encoding="utf-8")
+    return path
+
+
+def test_vocabulario_registra_e_le_por_idioma(tmp_path, ref):
+    base = tmp_path / "perfis"
+    make("nathan", base, ref)
+    profile.set_vocabulary("nathan", "pt", write_vocab(tmp_path / "pt.json", {"IA": "IÁ"}), base)
+    perfil = profile.set_vocabulary(
+        "nathan", "en", write_vocab(tmp_path / "en.json", {"PR": "pee are"}), base)
+    assert perfil["vocabularios"] == {"pt": "vocab.pt.json", "en": "vocab.en.json"}
+    assert (base / "nathan" / "vocab.pt.json").is_file()
+    assert profile.vocabulary(profile.load("nathan", base), "pt") == {"IA": "IÁ"}
+    assert profile.vocabulary(profile.load("nathan", base), "en") == {"PR": "pee are"}
+    assert profile.vocabulary(profile.load("nathan", base), "es") == {}
+
+
+def test_vocabulario_invalido_nao_altera_o_perfil(tmp_path, ref):
+    base = tmp_path / "perfis"
+    make("nathan", base, ref)
+    before = (base / "nathan" / "perfil.json").read_text(encoding="utf-8")
+    big = {f"t{i}": "x" for i in range(2001)}
+    for bad in ({}, {"a": ""}, {"a": 3}, big, [1]):
+        with pytest.raises(VoiceError):
+            profile.set_vocabulary("nathan", "pt", write_vocab(tmp_path / "v.json", bad), base)
+    with pytest.raises(VoiceError, match="não suportado"):
+        profile.set_vocabulary("nathan", "xx", write_vocab(tmp_path / "v.json", {"a": "b"}), base)
+    assert (base / "nathan" / "perfil.json").read_text(encoding="utf-8") == before
+    assert sorted(p.name for p in (base / "nathan").iterdir()) == ["perfil.json", "voz-ref.wav"]

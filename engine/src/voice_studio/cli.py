@@ -138,5 +138,17 @@ def perfil_mostrar(nome: str, perfis_dir: PERFIS_DIR = None) -> None:
     typer.echo(json.dumps(data, ensure_ascii=False, indent=2))
 
 
+@perfil_app.command("vocab")
+def perfil_vocab(nome: str, arquivo: Path,
+                 lang: Annotated[str, typer.Option("--lang", help="Idioma do vocabulário.")] = "pt",
+                 perfis_dir: PERFIS_DIR = None) -> None:
+    """Associa um vocabulário de pronúncia (JSON) a um idioma do perfil."""
+    try:
+        profile_mod.set_vocabulary(nome, lang, arquivo, perfis_dir)
+    except VoiceError as exc:
+        _fail(exc)
+    typer.echo(f"Vocabulário '{lang}' registrado no perfil '{nome}'.")
+
+
 def main() -> None:
     app()

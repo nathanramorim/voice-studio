@@ -10,7 +10,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import audio, consent
+from . import audio, consent, languages, vocab
 from .errors import VoiceError
 
 HOME_ENV = "VOICE_STUDIO_HOME"
@@ -76,7 +76,15 @@ def create(nome: str, origem: Path, confirm: bool, base: Path | None = None,
         "vocabularios": {},
     }
     root.mkdir(parents=True, exist_ok=True)
-    folder.mkdir()
+    try:
+        folder.mkdir()
+    except FileExistsError as exc:  # ex.: symlink pendente em <base>/<nome>
+        raise VoiceError(
+            f"Não foi possível criar a pasta do perfil '{nome}': já existe um item "
+            "(talvez um link quebrado) nesse caminho. Remova-o ou escolha outro nome."
+        ) from exc
+    except OSError as exc:
+        raise VoiceError(f"Não foi possível criar a pasta do perfil '{nome}': {exc}") from exc
     try:
         extract(origem, folder / SAMPLE_FILE, start, duration)
         (folder / PROFILE_FILE).write_text(
@@ -117,3 +125,54 @@ def list_profiles(base: Path | None = None) -> list[str]:
         return []
     return sorted(p.name for p in root.iterdir()
                   if p.is_dir() and NAME_RE.fullmatch(p.name) and (p / PROFILE_FILE).is_file())
+
+
+def _vocab_name(lang: str) -> str:
+    return f"vocab.{lang}.json"
+
+
+def set_vocabulary(nome: str, lang: str, arquivo: Path, base: Path | None = None) -> dict:
+    """Valida o mapa, grava `vocab.<lang>.json` na pasta do perfil e registra em `perfil.json`.
+
+    Escreve só dentro de `<base>/<nome>/`; qualquer falha deixa o perfil como estava.
+    """
+    languages.require(lang)
+    mapping = vocab.load(arquivo)  # valida tamanho, tipos e chaves antes de tocar no perfil
+    if not mapping:
+        raise VoiceError(f"O vocabulário está vazio: {arquivo}")
+    data = load(nome, base)
+    folder = Path(data["amostra_path"]).parent
+    target = folder / _vocab_name(lang)
+    previous = target.read_bytes() if target.is_file() else None
+    saved = {k: v for k, v in data.items() if k != "amostra_path"}
+    saved["vocabularios"] = {**(saved.get("vocabularios") or {}), lang: _vocab_name(lang)}
+    tmp_vocab, tmp_profile = folder / ".vocab.tmp", folder / ".perfil.tmp"
+    try:
+        tmp_vocab.write_text(json.dumps(mapping, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp_profile.write_text(json.dumps(saved, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp_vocab.replace(target)
+        try:
+            tmp_profile.replace(folder / PROFILE_FILE)
+        except BaseException:
+            if previous is None:
+                target.unlink(missing_ok=True)
+            else:
+                target.write_bytes(previous)
+            raise
+    except OSError as exc:
+        raise VoiceError(f"Não foi possível gravar o vocabulário no perfil '{nome}': {exc}") from exc
+    finally:
+        tmp_vocab.unlink(missing_ok=True)
+        tmp_profile.unlink(missing_ok=True)
+    return load(nome, base)
+
+
+def vocabulary(perfil: dict, lang: str) -> dict[str, str]:
+    """Mapa do idioma pedido (`{}` se não houver); nunca mistura mapas de idiomas diferentes."""
+    languages.require(lang)
+    registered = (perfil.get("vocabularios") or {}).get(lang)
+    if registered is None:
+        return {}
+    if registered != _vocab_name(lang):
+        raise VoiceError(f"Vocabulário '{lang}' inválido no perfil '{perfil.get('nome')}'.")
+    return vocab.load(Path(perfil["amostra_path"]).parent / registered)
