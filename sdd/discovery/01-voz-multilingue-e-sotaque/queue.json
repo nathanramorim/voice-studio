@@ -1,0 +1,158 @@
+{
+  "feature_id": "feat-01",
+  "branch": "feat/01-voz-multilingue-e-sotaque",
+  "spec_status": "reviewed",
+  "updated_at": "2026-11-16T17:01:02Z",
+  "items": [
+    {
+      "task_id": "feat-01-01-modulo-profile",
+      "title": "feat-01-01-modulo-profile — Perfil de voz (criar, listar, carregar, validar)",
+      "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-01-modulo-profile.md",
+      "status": "approved",
+      "rules": [
+        "SEG-01",
+        "SEG-02",
+        "VOZ-01",
+        "VOZ-04",
+        "ARQ-10",
+        "DUP-01",
+        "TST-01"
+      ],
+      "skills_used": [],
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Commit 87fc17d conforme (SEG-01, SEG-02, VOZ-01, VOZ-04, ARQ-10, DUP-01, TST-01). Evidência literal confirmada: extract injetável, base recusada se houver .git em qualquer pai (create, load e list_profiles), mkdir sem exist_ok com rmtree em falha, load valida nome/consentimento/amostra e limita perfil.json a 64 KB, CLI mostrar não imprime caminho da amostra, consentimento só vem da flag --confirm-own-voice. Observações menores não bloqueantes: (a) symlink pendente em \u003cbase\u003e/\u003cnome\u003e pode levantar FileExistsError cru em vez de VoiceError; (b) ajustes aceita chaves e tipos arbitrários sem validar."
+      }
+    },
+    {
+      "task_id": "feat-01-02-catalogo-de-idiomas",
+      "title": "feat-01-02-catalogo-de-idiomas — Catálogo único de idiomas e guarda por idioma",
+      "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-02-catalogo-de-idiomas.md",
+      "status": "approved",
+      "rules": [
+        "VOZ-06",
+        "VOZ-07",
+        "DUP-01",
+        "DUP-04",
+        "TST-01"
+      ],
+      "skills_used": [],
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Commit 253ad0e conforme (VOZ-06, VOZ-07, DUP-01, DUP-04, TST-01, COD-03, COD-04). guard.CPS, guard.DEFAULT_CPS e synth.LANGS removidos sem resto duplicado; guard.expected_seconds fora do catálogo levanta VoiceError e nenhum chamador quebra (speak chama languages.require antes); testes antigos de guard e speak intactos; pt 15,0 e en 12,5 batem com os valores medidos antes; es, fr, de, it estimados com validated=False e comentário honesto; concepts.md coerente com o código; 38 testes e ruff passam."
+      }
+    },
+    {
+      "task_id": "feat-01-03-vocabulario-por-idioma",
+      "title": "feat-01-03-vocabulario-por-idioma — Vocabulário de pronúncia por idioma no perfil",
+      "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-03-vocabulario-por-idioma.md",
+      "status": "approved",
+      "rules": [
+        "VOZ-05",
+        "DUP-01",
+        "DUP-03",
+        "TST-01"
+      ],
+      "skills_used": [],
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Commit 81e8aae conforme (VOZ-05, DUP-01, DUP-03, TST-01, SEG-02, ARQ-10). set_vocabulary grava vocab.\u003clang\u003e.json limpo só dentro da pasta do perfil, com arquivos temporários e restauração em falha; nome do arquivo vem de lang validado por languages.require (sem traversal); mapa vazio rejeitado como a spec manda, sem duplicar a validação de vocab.clean; vocabulary() devolve {} sem mapa e nunca mistura idiomas; FileExistsError do mkdir virou VoiceError com teste de symlink pendente; 62 testes e ruff passam. Observação menor: a CLI perfil vocab não tem teste próprio (a spec não exige)."
+      }
+    },
+    {
+      "task_id": "feat-01-04-falar",
+      "title": "feat-01-04-falar — `falar`: texto digitado com a voz de um perfil",
+      "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-04-falar.md",
+      "status": "approved",
+      "rules": [
+        "VOZ-01",
+        "VOZ-06",
+        "VOZ-09",
+        "ARQ-06",
+        "ARQ-10",
+        "TST-01"
+      ],
+      "skills_used": [],
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Commit cbd3f61 conforme (VOZ-01, VOZ-06, VOZ-09, ARQ-06, ARQ-10, TST-01). --perfil e --ref são exclusivos e o código nunca preenche --confirm-own-voice; --accept-cpml é checado antes de xtts_synth (teste com motor que falha se tocado); falar.run recebe o sintetizador por parâmetro; ok:false grava report.json e sai com código 2; check_adjusts valida velocidade e takes, rejeita chaves desconhecidas e perfis antigos continuam carregando; 62 testes e ruff passam. Observações de baixa severidade: (a) takes or settings['takes'] faz --takes 0 cair no valor do perfil em vez de erro; (b) a ramificação perfil+ref juntos não tem teste dedicado; documentar a convenção de código de saída 2."
+      }
+    },
+    {
+      "task_id": "feat-01-05-entrada-audio-ou-video",
+      "title": "feat-01-05-entrada-audio-ou-video — Dublagem com entrada e saída de áudio ou vídeo",
+      "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-05-entrada-audio-ou-video.md",
+      "status": "approved",
+      "rules": [
+        "SEG-03",
+        "DUP-03",
+        "TST-01"
+      ],
+      "skills_used": [],
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Commit 3f3a0bb conforme (SEG-03, DUP-03, TST-01). Todas as chamadas externas passam por audio.run com lista de argumentos, sem shell; has_video ignora capa de álbum; check_output valida extensão e falha cedo, antes do motor; o ramo com vídeo de mix_dub manteve os mesmos argumentos; o ajuste em tests/test_dub.py é legítimo (nenhuma asserção removida); testes usam mídia sintética com skipif de ffmpeg e nenhum arquivo de mídia entrou no commit; 62 testes passam."
+      }
+    },
+    {
+      "task_id": "feat-01-06-traduzir",
+      "title": "feat-01-06-traduzir — `traduzir`: áudio ou vídeo para outro idioma, com a voz do perfil",
+      "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-06-traduzir.md",
+      "status": "approved",
+      "rules": [
+        "VOZ-01",
+        "VOZ-03",
+        "ARQ-06",
+        "ARQ-10",
+        "TST-01"
+      ],
+      "skills_used": [],
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Re-revisão da feat-01-06 (commits 666e128 + d7a5d99): os dois achados anteriores foram resolvidos. check_out recusa saída igual à entrada (via resolve, seguindo symlinks, mesmo com --sobrescrever) e saída existente sem --sobrescrever, antes de xtts_synth, em traduzir e em dub, com testes que afirmam que o motor não é tocado e que a entrada fica intacta. prepare grava segments.json com abertura exclusiva e converte OSError em VoiceError (exit 1, sem traceback). VOZ-01/02/03 reconferidos; 79 testes passam. Observações: a checagem do dub vive na CLI e não em dub.dub (aceitável); report.json ainda pode ser regravado (comportamento anterior, desprezível)."
+      }
+    },
+    {
+      "task_id": "feat-01-07-skill-e-adaptadores",
+      "title": "feat-01-07-skill-e-adaptadores — Skill, comandos e adaptadores nos três agentes",
+      "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-07-skill-e-adaptadores.md",
+      "status": "approved",
+      "rules": [
+        "VOZ-08",
+        "DUP-10",
+        "ARQ-06"
+      ],
+      "skills_used": [],
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Re-revisão da feat-01-07 (commits 3a838c3 + 7119f41): os dois achados anteriores foram resolvidos. A convenção de saída (código 2 só em falar e traduzir; speak e dub saem 0 e pedem leitura do report.json) está igual no help, no README e no SKILL.md e bate com o código. Manifestos do plugin atualizados sem prometer sotaque e sem afirmar idiomas além de pt e en como validados; teste exige name e description não vazios. Reconferido: adaptadores só apontam para o SKILL.md; nenhum texto manda passar --confirm-own-voice ou --accept-cpml sem perguntar ao usuário; honestidade mantida (agy, Codex e uso real com voz seguem não validados). Observação: vale uma nota futura dizendo ao agente para perguntar antes de passar --sobrescrever."
+      }
+    },
+    {
+      "task_id": "feat-01-08-qa-manual",
+      "title": "feat-01-08-qa-manual — QA manual: perfil mineiro, inglês e agentes",
+      "spec_path": "sdd/discovery/01-voz-multilingue-e-sotaque/features/feat-01-08-qa-manual.md",
+      "status": "queued",
+      "rules": [
+        "VOZ-07",
+        "TST-01"
+      ],
+      "skills_used": [],
+      "attempts": 0
+    }
+  ]
+}

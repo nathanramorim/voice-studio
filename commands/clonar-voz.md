@@ -1,6 +1,6 @@
 ---
-description: Gera narração com a sua voz clonada (local, grátis), a partir de uma lista de falas.
+description: Atalho para narrar com a sua voz clonada; prefira /perfil-de-voz e /falar.
 argument-hint: "[falas.json] [--ref voice-ref.wav] [--lang pt|en]"
 ---
 
-Siga a skill `voice-studio`: confirme o consentimento da voz e o aceite da licença CPML com o usuário, e só então rode `uv run --python 3.11 --extra xtts voice-studio speak $ARGUMENTS` em `${CLAUDE_PLUGIN_ROOT}/engine` (Apple Silicon: `--python cpython-3.11-macos-aarch64-none`). Peça ao usuário para ouvir as falas.
+Atalho documentado: aponta para `/perfil-de-voz` (criar o perfil) e `/falar` (falar um texto). Siga a skill `voice-studio`; use `voice-studio speak $ARGUMENTS` só se o usuário pedir o comando de baixo nível com `--ref`, e confirme consentimento e licença CPML com ele antes.

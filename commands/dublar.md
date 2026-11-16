@@ -1,6 +1,6 @@
 ---
-description: Dubla um vídeo de português para inglês com a sua voz clonada.
-argument-hint: "[video] [--ref voice-ref.wav]"
+description: Atalho para dublar um vídeo com a sua voz; prefira /traduzir.
+argument-hint: "[entrada] [--para en] [--perfil NOME]"
 ---
 
-Siga o fluxo de dublagem da skill `voice-studio`: transcreva, traduza os segmentos você mesmo para o campo `text`, confirme consentimento e licença com o usuário e rode `dub`. Mostre o relatório (`overflow`) e ajuste os textos que estourarem o tempo.
+Atalho documentado: aponta para `/traduzir` (transcrever, você traduzir `text`, dublar com o perfil). Siga a skill `voice-studio`; `dub` direto só se o usuário já tiver `segments.json` traduzido e uma amostra `--ref`.
