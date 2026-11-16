@@ -1,0 +1,8 @@
+{
+  "name": "voice-studio",
+  "version": "0.1.0",
+  "description": "Clona a sua voz localmente (de graça), gera narração em português ou inglês e dubla vídeos de português para inglês, com vocabulário de pronúncia e proteção contra falas defeituosas.",
+  "license": "MIT",
+  "author": { "name": "Nathan Amorim", "url": "https://github.com/nathanramorim" },
+  "keywords": ["voz", "tts", "clonagem-de-voz", "dublagem", "xtts", "whisper", "reels"]
+}

@@ -1,0 +1,26 @@
+# Mídia, vozes e saídas: nunca versionar (privacidade da voz de quem usa)
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.m4a
+*.aiff
+*.flac
+out/
+saida/
+voice-ref*
+*.segments.json
+
+# Modelos
+*.bin
+*.pth
+*.safetensors
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+engine/.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/

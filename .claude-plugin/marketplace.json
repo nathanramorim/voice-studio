@@ -1,0 +1,11 @@
+{
+  "name": "voice-studio",
+  "owner": { "name": "voice-studio" },
+  "plugins": [
+    {
+      "name": "voice-studio",
+      "source": "./",
+      "description": "Sua voz clonada, local e gratuita: narração e dublagem português para inglês."
+    }
+  ]
+}
