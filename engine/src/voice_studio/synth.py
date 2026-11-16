@@ -7,7 +7,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import audio
+from . import audio, languages
 from .errors import VoiceError
 from .guard import Take, pick
 from .vocab import apply_spoken
@@ -16,7 +16,6 @@ from .vocab import apply_spoken
 Synth = Callable[[str, Path, str, Path, float], None]
 
 XTTS_MODEL = "tts_models/multilingual/multi-dataset/xtts_v2"
-LANGS = {"pt", "en", "es", "fr", "de", "it"}
 
 
 def xtts_synth(speed: float = 1.08) -> Synth:
@@ -51,8 +50,7 @@ def speak(lines: list[str], ref: Path, lang: str, outdir: Path, synth: Synth,
           mapping: dict[str, str] | None = None, takes: int = 3, speed: float = 1.08,
           base_temperature: float = 0.6, first_index: int = 1) -> list[Line]:
     """Uma fala por linha: aplica o vocabulário, gera N variações e fica com a melhor."""
-    if lang not in LANGS:
-        raise VoiceError(f"Idioma não suportado: {lang} (use {', '.join(sorted(LANGS))}).")
+    languages.require(lang)
     if takes < 1:
         raise VoiceError("--takes deve ser pelo menos 1.")
     outdir.mkdir(parents=True, exist_ok=True)

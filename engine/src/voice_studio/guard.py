@@ -5,14 +5,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-# Caracteres (com espaços) por segundo, medidos em falas reais com o XTTS-v2.
-CPS = {"pt": 15.0, "en": 12.5}
-DEFAULT_CPS = 14.0
+from . import languages
+
 LOW, HIGH = 0.5, 1.6
 
 
 def expected_seconds(text: str, lang: str, speed: float = 1.0) -> float:
-    cps = CPS.get(lang, DEFAULT_CPS) * max(speed, 0.1)
+    cps = languages.require(lang).cps * max(speed, 0.1)
     return max(len(text.strip()), 1) / cps
 
 
