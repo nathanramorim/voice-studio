@@ -50,7 +50,7 @@ voice-studio falar --arquivo falas.json --perfil nathan --lang en --accept-cpml 
 `pt`, `en`, `es`, `fr`, `de` e `it`. Só `pt` e `en` foram medidos com falas reais (`validated: true`). Nos demais o relatório traz `validated: false` e a CLI avisa: diga ao usuário que a qualidade não foi verificada e peça para ouvir com atenção.
 
 ## Códigos de saída
-`0` ok; `1` erro de uso ou validação (nada foi gerado); `2` gerou, mas há fala(s) suspeita(s) (`ok: false`): confira o `report.json`.
+`0` ok; `1` erro de uso ou validação (nada foi gerado); `2` só em `falar` e `traduzir`: gerou, mas há fala(s) suspeita(s) (`ok: false`); confira o `report.json`. `speak` e `dub` (baixo nível) saem `0` mesmo com linha suspeita ou estouro de tempo: leia o `report.json` ou o resumo impresso.
 
 ## Sotaque (VOZ-07)
 O sotaque vem da amostra e do vocabulário, não do modelo; nunca prometa sotaque. A transcrição não prova a pronúncia (o Whisper normaliza marcas). Peça ao usuário para ouvir.

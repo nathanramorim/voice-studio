@@ -40,7 +40,11 @@ def test_adaptadores_citam_a_skill_sem_copiar_o_corpo():
 
 def test_plugin_manifestos_validos_e_comandos_com_description():
     for arq in (".claude-plugin/plugin.json", ".claude-plugin/marketplace.json"):
-        assert isinstance(json.loads((RAIZ / arq).read_text(encoding="utf-8")), dict)
+        dados = json.loads((RAIZ / arq).read_text(encoding="utf-8"))
+        assert isinstance(dados, dict)
+        alvo = dados["plugins"][0] if "plugins" in dados else dados
+        for campo in ("name", "description"):
+            assert isinstance(alvo.get(campo), str) and alvo[campo].strip(), (arq, campo)
     arquivos = sorted((RAIZ / "commands").glob("*.md"))
     nomes = {a.stem for a in arquivos}
     assert {"perfil-de-voz", "falar", "traduzir", "clonar-voz", "dublar"} <= nomes
