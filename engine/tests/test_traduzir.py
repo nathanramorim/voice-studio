@@ -282,3 +282,87 @@ def test_takes_zero_cai_no_erro_de_speak_em_falar_e_traduzir(tmp_path, ref, monk
 def test_perfil_e_ref_juntos_falha_em_falar(tmp_path, ref):
     with pytest.raises(VoiceError, match="não os dois"):
         falar.resolve("nathan", ref, True)
+
+
+def _dub_args(ref, seg, out, *extra):
+    return ["dub", str(ref), str(seg), "--ref", str(ref), "--confirm-own-voice",
+            "--accept-cpml", "--out", str(out), "--takes", "1", *extra]
+
+
+def _traduzir_args(ref, base, seg, out, *extra):
+    return ["traduzir", str(ref), "--perfil", "nathan", "--para", "en", "--perfis-dir", str(base),
+            "--segmentos", str(seg), "--accept-cpml", "--out", str(out), "--takes", "1", *extra]
+
+
+def test_traduzir_recusa_saida_igual_a_entrada_ou_existente_sem_tocar_no_motor(
+        tmp_path, ref, monkeypatch):
+    mock_audio(monkeypatch)
+    base, _ = make_profile(tmp_path, ref)
+    seg = translated(tmp_path)
+    touched = []
+    monkeypatch.setattr(synth_mod, "xtts_synth", lambda speed=1.08: touched.append(1) or Recorder())
+    original = ref.read_bytes()
+    res = CliRunner().invoke(cli.app, _traduzir_args(ref, base, seg, ref))
+    assert res.exit_code == 1 and "mesmo arquivo" in res.output and not touched
+    assert ref.read_bytes() == original
+    out = tmp_path / "d.m4a"
+    out.write_bytes(b"antigo")
+    res = CliRunner().invoke(cli.app, _traduzir_args(ref, base, seg, out))
+    assert res.exit_code == 1 and "--sobrescrever" in res.output and not touched
+    assert out.read_bytes() == b"antigo"
+    res = CliRunner().invoke(cli.app, _traduzir_args(ref, base, seg, out, "--sobrescrever"))
+    assert res.exit_code == 0 and touched and out.read_bytes() == b"x", res.output
+
+
+def test_dub_recusa_saida_igual_a_entrada_ou_existente_sem_tocar_no_motor(
+        tmp_path, ref, monkeypatch):
+    mock_audio(monkeypatch)
+    seg = tmp_path / "s.json"
+    seg.write_text('[{"start":0,"end":2,"text":"Hello there my friend"}]', encoding="utf-8")
+    touched = []
+    monkeypatch.setattr(synth_mod, "xtts_synth",
+                        lambda speed=1.08: touched.append(1) or Recorder())
+    original = ref.read_bytes()
+    res = CliRunner().invoke(cli.app, _dub_args(ref, seg, ref))
+    assert res.exit_code == 1 and "mesmo arquivo" in res.output and not touched
+    assert ref.read_bytes() == original
+    out = tmp_path / "d.m4a"
+    out.write_bytes(b"antigo")
+    res = CliRunner().invoke(cli.app, _dub_args(ref, seg, out))
+    assert res.exit_code == 1 and "--sobrescrever" in res.output and not touched
+    assert out.read_bytes() == b"antigo"
+    res = CliRunner().invoke(cli.app, _dub_args(ref, seg, out, "--sobrescrever"))
+    assert res.exit_code == 0 and touched and out.read_bytes() == b"x", res.output
+
+
+def test_prepare_pasta_inexistente_vira_erro_claro_e_nao_sobrescreve(tmp_path, ref):
+    _, perfil = make_profile(tmp_path, ref)
+    with pytest.raises(VoiceError, match="pasta"):
+        traduzir.prepare(ref, perfil, "pt", "en", None, tmp_path / "nada" / "s.json",
+                         fake_transcriber)
+    destino = tmp_path / "seg.json"
+    destino.write_text("minha traducao", encoding="utf-8")
+    with pytest.raises(VoiceError, match="já existe"):
+        traduzir.prepare(ref, perfil, "pt", "en", None, destino, fake_transcriber)
+    assert destino.read_text(encoding="utf-8") == "minha traducao"
+
+
+def test_prepare_corrida_no_arquivo_e_erro_de_escrita_viram_voiceerror(tmp_path, ref):
+    _, perfil = make_profile(tmp_path, ref)
+    destino = tmp_path / "seg.json"
+
+    def criando(entrada, model, de):  # o arquivo surge durante a transcrição
+        destino.write_text("outro processo", encoding="utf-8")
+        return fake_transcriber(entrada, model, de)
+
+    with pytest.raises(VoiceError, match="já existe"):
+        traduzir.prepare(ref, perfil, "pt", "en", None, destino, criando)
+    assert destino.read_text(encoding="utf-8") == "outro processo"
+    sem_perm = tmp_path / "ro"
+    sem_perm.mkdir()
+    sem_perm.chmod(0o500)
+    try:
+        with pytest.raises(VoiceError, match="Não foi possível gravar"):
+            traduzir.prepare(ref, perfil, "pt", "en", None, sem_perm / "s.json", fake_transcriber)
+    finally:
+        sem_perm.chmod(0o700)

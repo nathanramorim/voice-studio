@@ -29,6 +29,8 @@ CPML = Annotated[bool, typer.Option("--accept-cpml",
                                     help="Aceito a licença Coqui CPML do modelo XTTS-v2.")]
 PERFIS_DIR = Annotated[Path | None, typer.Option(
     "--perfis-dir", help="Pasta dos perfis (padrão: VOICE_STUDIO_HOME ou ~/.voice-studio/perfis).")]
+SOBRESCREVER = Annotated[bool, typer.Option(
+    "--sobrescrever", help="Permite substituir a saída se ela já existir (a entrada nunca é sobrescrita).")]
 VOCAB = Annotated[Path | None, typer.Option("--vocab", help="pronuncia.json (opcional).")]
 
 
@@ -123,12 +125,14 @@ def falar(texto: Annotated[str | None, typer.Argument(help="Texto a falar.")] = 
 def dub(video: Path, segments: Path, ref: REF, confirm_own_voice: OWN = False,
         accept_cpml: CPML = False, lang: str = "en",
         out: Annotated[Path, typer.Option("--out", "-o")] = Path("dublado.mp4"),
-        takes: int = 3, vocab_file: VOCAB = None, keep_original: float = 0.0) -> None:
+        takes: int = 3, vocab_file: VOCAB = None, keep_original: float = 0.0,
+        sobrescrever: SOBRESCREVER = False) -> None:
     """Dubla vídeo (saída .mp4) ou áudio (saída .m4a/.wav): segmentos com `start`, `end`, `text`."""
     try:
         consent.require_consent(confirm_own_voice, ref)
         consent.require_license(accept_cpml)
         segs = dub_mod.load_segments(segments)
+        traduzir_mod.check_out(video, out, sobrescrever)  # antes de tocar no motor
         mapping = vocab.load(vocab_file) if vocab_file else {}
         report = dub_mod.dub(video, segs, ref, lang, out, synth_mod.xtts_synth(speed=1.0),
                              out.parent / f".{out.stem}-work", mapping, takes, keep_original)
@@ -152,7 +156,7 @@ def traduzir(entrada: Path,
              out: Annotated[Path | None, typer.Option("--out", "-o")] = None,
              takes: Annotated[int | None, typer.Option(
                  "--takes", help="Variações por fala (padrão: ajuste do perfil).")] = None,
-             perfis_dir: PERFIS_DIR = None) -> None:
+             perfis_dir: PERFIS_DIR = None, sobrescrever: SOBRESCREVER = False) -> None:
     """Traduz áudio ou vídeo em duas fases (transcreve; o agente traduz; dubla com o perfil)."""
     try:
         voz = profile_mod.load(perfil, perfis_dir)  # consentimento já registrado no perfil
@@ -166,6 +170,7 @@ def traduzir(entrada: Path,
             if takes is not None and takes < 1:
                 raise VoiceError("--takes deve ser pelo menos 1.")
             saida = out or traduzir_mod.default_out(entrada)
+            traduzir_mod.check_out(entrada, saida, sobrescrever)  # antes de tocar no motor
             report = traduzir_mod.render(entrada, segmentos, voz, para, saida,
                                          synth_mod.xtts_synth(speed=1.0), takes)
     except VoiceError as exc:

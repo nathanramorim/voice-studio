@@ -31,15 +31,24 @@ def prepare(entrada: Path, perfil: dict, de: str, para: str, model: Path | None,
     languages.require(de)
     if not perfil.get("amostra_path"):
         raise VoiceError("Perfil sem amostra de voz.")
+    jaexiste = (f"{destino} já existe (pode conter sua tradução): use --out para "
+                "outro caminho ou apague o arquivo.")
     if destino.exists():
-        raise VoiceError(f"{destino} já existe (pode conter sua tradução): use --out para "
-                         "outro caminho ou apague o arquivo.")
+        raise VoiceError(jaexiste)
+    if not destino.parent.is_dir():
+        raise VoiceError(f"A pasta de {destino} não existe: crie a pasta ou use outro --out.")
     segments = (transcriber or transcribe.transcribe)(entrada, model, de)
     if not segments:
         raise VoiceError("Nenhuma fala encontrada na entrada.")
     rows = [{"start": s["start"], "end": s["end"], "source": s["source"], "text": ""}
             for s in segments]
-    destino.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        with destino.open("x", encoding="utf-8") as fh:  # exclusivo: sem janela de corrida
+            fh.write(json.dumps(rows, ensure_ascii=False, indent=2))
+    except FileExistsError:
+        raise VoiceError(jaexiste) from None
+    except OSError as exc:
+        raise VoiceError(f"Não foi possível gravar {destino}: {exc.strerror or exc}.") from exc
     return rows
 
 
@@ -54,6 +63,14 @@ def render(entrada: Path, segmentos: Path, perfil: dict, para: str, out: Path, s
                      out.parent / f".{out.stem}-work", profile.vocabulary(perfil, para), chosen)
     report["validated"] = language.validated
     return report
+
+
+def check_out(entrada: Path, out: Path, sobrescrever: bool = False) -> None:
+    """Recusa saída igual à entrada (o ffmpeg a leria com -y) e saída existente sem opt-in."""
+    if out.resolve() == entrada.resolve():
+        raise VoiceError(f"A saída {out} é o mesmo arquivo da entrada: escolha outro --out.")
+    if out.exists() and not sobrescrever:
+        raise VoiceError(f"{out} já existe: use outro --out ou passe --sobrescrever.")
 
 
 def default_out(entrada: Path) -> Path:
