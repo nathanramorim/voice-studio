@@ -1,0 +1,29 @@
+{
+  "veredito": "duvida",
+  "achados": [
+    {
+      "verificacao": "S-05",
+      "regra": "VOZ-10",
+      "classificacao": "duvida",
+      "severidade": "media",
+      "arquivo": "skills/voice-studio/SKILL.md",
+      "linha": 20,
+      "evidencia": "ele confere o uv (e só o instala com o ok do usuário) e roda `checar` sobre `RAIZ/requisitos.toml`",
+      "explicacao": "O motor procura o requisitos.toml em Path.cwd() e nos pais dele antes da pasta do script (scripts/requisitos.py:316). A skill roda a partir do projeto do usuário, então se esse projeto tiver o próprio requisitos.toml, o bootstrap confere a receita errada. Reproduzi assim: um cwd com outro requisitos.toml, depois `sh .../voice-studio/scripts/bootstrap.sh validar`, deu 'Receita inválida: /private/tmp/vsrev/outro/requisitos.toml' com rc=2. É provável que aconteça, porque o mesmo motor está sendo adotado em outros repositórios (readme-studio).",
+      "correcao": "No passo 0 e na linha 79 da SKILL.md, passar `--arquivo RAIZ/requisitos.toml` explicitamente (ex.: `sh RAIZ/scripts/bootstrap.sh --arquivo RAIZ/requisitos.toml checar` e `uv run RAIZ/scripts/requisitos.py --arquivo RAIZ/requisitos.toml instalar --sim <item>`)."
+    },
+    {
+      "verificacao": "S-05",
+      "regra": "FLX-03",
+      "classificacao": "duvida",
+      "severidade": "media",
+      "arquivo": "PR #5 (título e corpo, fora do diff)",
+      "linha": 1,
+      "evidencia": "feat: script de requisitos e prompt de instalação para a IA (0.2.1)",
+      "explicacao": "O título e o corpo do PR #5 ainda descrevem a feat-03-01: o script próprio, o 0.2.1, '100 passam' (hoje são 91) e o Homebrew. Não citam a spec feat-03-02, o motor vendorizado, o requisitos.toml nem a CI. Também faltam as seções do template (Spec, Impacto, Rollback, Checklist da constitution).",
+      "correcao": "Antes do painel humano, atualizar o título e o corpo do PR #5 para a 0.3.0 seguindo .github/pull_request_template.md."
+    }
+  ],
+  "candidate_skill": null,
+  "resumo": "Camada A toda verde (validar, checar --json, pytest 91, ruff, sha256 = skills.lock = 5f63e02, prompt literal no README, verificador do readme-studio ok, CI verde nos 3 sistemas, forge gate rc 0 com P-13 falso positivo em .venv). Camada B: afirmações do toml conferem com o código (CPU fixo, VOICE_STUDIO_WHISPER_MODEL, perfil.json, caminhos do coqui, sem espeak nem microfone), Homebrew nunca é único caminho, versão 0.3.0 em todos os lugares. Duas dúvidas médias: resolução do toml pelo cwd na SKILL.md (reproduzida) e corpo do PR #5 desatualizado em relação ao template."
+}

@@ -22,7 +22,7 @@ VIDEO_EXTS = (".mp4", ".mov", ".mkv", ".webm")
 
 def run(cmd: list[str]) -> str:
     if shutil.which(cmd[0]) is None:
-        raise VoiceError(f"`{cmd[0]}` não encontrado. Veja o comando do seu sistema com: uv run scripts/requisitos.py checar")
+        raise VoiceError(f"`{cmd[0]}` não encontrado. Na pasta do voice-studio, veja o comando do seu sistema com: uv run scripts/requisitos.py checar")
     done = subprocess.run(cmd, capture_output=True, text=True, check=False)
     if done.returncode != 0:
         raise VoiceError(f"{cmd[0]} falhou: {done.stderr.strip()[-400:]}")
