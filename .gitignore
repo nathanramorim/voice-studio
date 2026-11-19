@@ -24,3 +24,11 @@ engine/.venv/
 *.egg-info/
 .pytest_cache/
 .ruff_cache/
+
+# Forge SDD: telemetria de sessão e runtime ficam fora do git (repositório público)
+sdd/.metrics/session-*.json
+sdd/.runtime/
+.forge/runtime/
+
+# SO
+.DS_Store

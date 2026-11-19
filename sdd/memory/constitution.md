@@ -11,7 +11,7 @@ Plugin para Claude Code, Antigravity (agy) e Codex que clona a voz do próprio u
 | Voz | XTTS-v2 (Coqui CPML) atrás da interface `synth.Synth` | clona de amostra, pt/en/es/fr/de/it, roda em CPU; trocável por motor de licença permissiva |
 | Transcrição | whisper.cpp (`whisper-cli`) | local; nada sai da máquina |
 | Áudio/vídeo | ffmpeg | corte, encaixe e mixagem |
-| CLI | typer | borda fina; domínio em `core` |
+| CLI | typer | borda fina (`cli.py`); domínio nos demais módulos de `voice_studio` |
 | Config | arquivos do usuário (`pronuncia.json`, perfil de voz) | sem variável de ambiente de segredo |
 | Secrets | nenhum | o plugin não usa chaves; áudio nunca vai para a nuvem |
 
@@ -22,6 +22,9 @@ Plugin para Claude Code, Antigravity (agy) e Codex que clona a voz do próprio u
 | Onde a voz roda | Sempre local; LLM só vê texto (ADR-0001) |
 | Sotaque | Vem da amostra e do vocabulário; o motor não tem pt-BR/mineiro nativo (ADR-0001) |
 | Agentes suportados | Claude Code, agy (Gemini) e Codex, com um só conteúdo de skill (ADR-0001) |
+| Perfis de voz | Fora do repositório, em `~/.voice-studio/perfis/<nome>/` (ADR-0002) |
+| Python | Sempre `uv`; nunca pip (ADR-0003) |
+| Processo | Forge SDD 4.9.1-beta; toda feature ou fix pelo fluxo; skill replicável (ADR-0004) |
 
 ## Ferramentas e Integrações
 | Campo | Valor |
@@ -32,21 +35,21 @@ Consulte `sdd/memory/mcps.md` para o status real de cada MCP configurado (`ativo
 
 ## Regras (máx. 15)
 0. Idioma: pt-BR (chat, commits e PRs). Nível de Linguagem: padrão. (`COD-05`)
-1. Sem commits diretos em main (`FLX-02`)
-2. Branch por feature (`feat/*`) (`FLX-02`)
-3. Config e recursos estáticos centralizados conforme arquitetura do projeto (`ARQ-03`)
+1. Sem commits diretos em `main`; uma branch por iniciativa (`feat/<id>-<nome>`, `fix/<id>-<nome>` ou `chore/<nome>`), nunca por task: pergunte o ponto de partida (padrão `main`) e verifique se há branch a retomar. (`FLX-02`)
+2. Toda feature ou fix nasce por `/discovery`, `/nova-feature` ou `/novo-fix` (pasta em `sdd/discovery/`, fila, `status.md`, revisão da Governança): mapeia as execuções, cria histórico e sequencializa o contexto. (`FLX-01`)
+3. Replicável: nenhum nome de empresa, pessoa ou perfil real dentro da skill, dos comandos, dos exemplos, dos testes ou do README; perfis, amostras e vocabulários vêm de quem usa (`~/.voice-studio/perfis/`); exemplos com nomes fictícios; instalado como plugin, nunca copiado para dentro de outro repositório. (`ARQ-03`, `DUP-10`)
 4. Secrets em `.env` ou cofre seguro — nunca no binário ou repositório (`SEG-04`)
 5. Antes de usar lib externa, consultar context7 com versão exata — desde que `sdd/memory/mcps.md` o liste como `ativo`; se `indisponível`, usar a documentação oficial da lib (`SEG-07`)
-6. Toda feature tem critério executável (`TST-01`)
-7. Verificação estática / linter deve passar após cada task (`COD-02`)
-8. Dependências de runtime restritas ao estritamente necessário (`ARQ-04`)
+6. Toda feature ou fix tem critério executável (`TST-01`)
+7. Python só via `uv` (`engine/pyproject.toml` + `uv.lock`; extra `xtts` para o motor); nunca `pip` nem venv manual, nem nas instruções. `uv run ruff check` e `uv run pytest` em `engine/` passam após cada task. (`COD-02`, `TST-01`)
+8. Dependências de runtime restritas ao estritamente necessário; o motor pesado fica no extra opcional `xtts` (`ARQ-04`)
 9. Modos de simulação (`--dry-run`) nunca causam efeitos colaterais em disco (`ARQ-05`)
-10. Superfície pública do sistema expõe contratos explícitos (`ARQ-06`)
+10. Superfície pública do sistema expõe contratos explícitos (CLI, `segments.json`, relatório) (`ARQ-06`)
 11. Versões Beta (`-beta`) não podem ser mescladas na `main`; a tag é criada diretamente na branch de feature e o PR correspondente deve ser mantido aberto para estabilização antes de promover para oficial. (`FLX-07`)
-12. Documentação e Release Notes atualizados a cada entrega relevante, com destaques reais em `sdd/releases/history.md`. (`FLX-07`)
-13. As tasks de uma iniciativa ficam em `sdd/discovery/<id>-<nome>/features/`. (`FLX-02`)
-14. A telemetria da sessão é gravada no `Close`, com o caminho completo da feature ou task. (`FLX-04`)
-15. Uma branch por iniciativa (`<prefixo>/<id>-<nome>`), nunca por task: pergunte o ponto de partida (padrão `main`) e verifique se há branch a retomar. (`FLX-02`)
+12. Documentação (README pelo readme-studio, com `## Requisitos` antes de `## Instalação` conferida por `verificar_readme.py`, e tabela de versões) e Release Notes atualizados a cada entrega relevante, com destaques reais em `sdd/releases/history.md`. (`FLX-07`)
+13. As tasks de uma iniciativa ficam em `sdd/discovery/<id>-<nome>/features/` e os fixes em `fixes/`. (`FLX-02`)
+14. A telemetria da sessão é gravada no `Close` (`forge session record`), com o caminho completo da feature ou task; as sessões ficam fora do git (repositório público). (`FLX-04`, `SEG-05`)
+15. Segurança da voz: consentimento explícito de quem é dono da voz e processamento 100% local, conforme `VOZ-01` a `VOZ-04`; entrada validada na borda (`cli`) e escrita só no destino pedido, sem sobrescrever sem `--sobrescrever`. (`SEG-01`, `SEG-02`)
 
 <!-- forge-sdd-governanca:inicio versao=3.0.0-beta -->
 ## IDs Canônicos da Constituição (O Quê e Por Quê)
@@ -118,7 +121,9 @@ A relação entre cada rule, o escopo (`globs`) e os IDs que ela cobre (`regras`
 
 | ID | Onde | O que diverge | Proposta | Tarefa |
 |----|------|---------------|----------|--------|
-| — | — | Nenhuma divergência ativa registrada | — | — |
+| Regra 3 | `README.md` (exemplos de `perfil`, `falar`, `traduzir`) | Perfil de exemplo com nome real de pessoa | Trocar por nome fictício (ex.: `ana`) | `/novo-fix` futuro |
+| Regra 3 | `engine/tests/test_falar.py`, `engine/tests/test_profile.py` | Perfil de teste com nome real de pessoa | Trocar por nome fictício | `/novo-fix` futuro |
+| Regra 12 | `README.md` | `## Antes de começar` no lugar de `## Requisitos` | Seção Requisitos completa | `fix/requisitos-readme` |
 <!-- forge-sdd-governanca:fim -->
 
 ## Regras do domínio de voz (`VOZ`)
