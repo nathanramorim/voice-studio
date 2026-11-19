@@ -19,8 +19,8 @@ Apple Silicon: `uv run --python cpython-3.11-macos-aarch64-none` (sem isso o `uv
 ```
 .claude-plugin/        manifesto do plugin (Claude Code)
 skills/voice-studio/   corpo único da skill (todos os agentes)
-commands/              /clonar-voz, /dublar
-engine/src/voice_studio/  vocab, guard, synth, dub, audio, transcribe, consent, cli
+commands/              /perfil-de-voz, /falar, /traduzir (atalhos /clonar-voz, /dublar)
+engine/src/voice_studio/  cli, consent, profile, languages, vocab, guard, synth, falar, traduzir, dub, audio, transcribe
 engine/tests/          testes com sintetizador simulado
 exemplos/              vocabulários e falas de exemplo (sem voz)
 sdd/                   Forge SDD (constitution, spec, discovery)

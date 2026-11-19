@@ -7,7 +7,19 @@
 ## `vocab`
 **Responsabilidade:** vocabulário de pronúncia: carga validada e troca por palavra inteira (`VOZ-05`).
 - [x] `load`, `apply_spoken`
-- [ ] Perfis por idioma e sotaque (feature planejada)
+- [x] Vocabulário por idioma dentro do perfil (feat 01)
+
+## `profile`
+**Responsabilidade:** perfil de voz (amostra normalizada, consentimento, ajustes, vocabulário por idioma) em `VOICE_STUDIO_HOME` ou `~/.voice-studio/perfis`, sempre fora de repositório git (`VOZ-01`, `VOZ-04`, ADR-0002).
+- [x] `create`, `load`, `set_vocabulary`
+
+## `languages`
+**Responsabilidade:** catálogo único de idiomas (código, caracteres por segundo, `validated`) (`DUP-04`).
+- [x] `pt`, `en`, `es`, `fr`, `de`, `it`
+
+## `falar` e `traduzir`
+**Responsabilidade:** casos de uso: texto digitado vira fala na voz do perfil; áudio ou vídeo vira outro idioma em duas fases (o agente traduz só texto, `VOZ-03`).
+- [x] `falar`, `traduzir` (`prepare`, `render`)
 
 ## `guard`
 **Responsabilidade:** duração esperada, detecção de fala suspeita e escolha da melhor variação (`VOZ-06`).
