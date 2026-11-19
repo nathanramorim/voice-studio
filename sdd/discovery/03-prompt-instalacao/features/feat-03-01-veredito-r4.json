@@ -1,0 +1,18 @@
+{
+  "veredito": "duvida",
+  "achados": [
+    {
+      "verificacao": "S-05",
+      "regra": "VOZ-10",
+      "classificacao": "duvida",
+      "severidade": "baixa",
+      "arquivo": "README.md",
+      "linha": 43,
+      "evidencia": "para cada item que eu aprovar, rode `uv run https://raw.githubusercontent.com/nathanramorim/voice-studio/main/scripts/requisitos.py instalar --sim <item>`",
+      "explicacao": "O `checar` lista como `opcional` alguns itens que não têm comando: `perfil-de-voz` e `modelo-xtts`, que são do tipo \"seu\", e `motor-xtts` antes do clone. Testei com o ambiente injetado: `instalar --sim` com qualquer um deles só imprime a explicação e sai 1 com \"Algum item pedido ainda não está ok\" (requisitos.py:348-350). Esse é o mesmo código de quando um comando falha. O passo 0 da skill avisa que os itens \"seu\" são só explicados, mas o prompt do README não avisa, então a IA pode dizer que uma instalação falhou quando não havia nada para o script fazer.",
+      "correcao": "No prompt, dizer que a IA só roda `instalar --sim` para itens com comando, e que os itens do tipo \"seu\" ficam com a pessoa; ou fazer o script usar um código ou uma mensagem própria para \"nada a rodar por aqui\"."
+    }
+  ],
+  "candidate_skill": null,
+  "resumo": "Camada A toda verde. pytest: 98 passed. ruff check . ../scripts: All checks passed. `checar` imprime a tabela e sai 0. `checar --json` sai 0, com ok=true e 12 itens. `instalar </dev/null` só mostra os comandos, com a dica `instalar --sim <item>`, e sai 0. `instalar --sim nao-existe` sai 2 e lista os itens válidos. `grep -c 'Cole isto na sua IA antes de instalar' README.md` = 1. A VOZ-10 está em constitution.md:142. Os dois verificadores do readme-studio (origin/main e origin/feat/02-prompt-instalacao) imprimem `requisitos: ok`. O achado da rodada 3 foi tratado: um comando que falha agora faz o `instalar` sair 1 (`falhou`, linhas 340 e 345-347), e também sai 1 quando um item pedido continua faltando. Três testes novos cobrem isso, e a dica sem terminal agora aponta para o item. Os achados das rodadas 1 e 2 continuam resolvidos: nomes de item no `instalar`, a pergunta antes do uv, a 0.2.0 marcada como não publicada como tag, o grep do critério 5 = 1, `__version__` e history.md em 0.2.1. Procurei versões desatualizadas fora do diff e não achei nenhuma: o marketplace.json não tem versão, e o único 0.1.0 que sobra é a linha histórica da tabela de versões. Pedido do dono conferido: o `instalar` mostra os comandos, roda com `--sim`, pergunta sem `--sim`, é idempotente e o código de saída tem significado. O script nunca passa `--accept-cpml` nem `--confirm-own-voice` e não toca em segredos. O quote fica dentro de `## Requisitos`, antes da tabela de 7 pontos e de `## Instalação`, e traz os comandos reais, o ok item a item, \"Não aceite licenças nem declarações por mim\", `claude plugin marketplace add` e `claude plugin install`. Resta uma dúvida baixa, que não bloqueia: o prompt do README não avisa que os itens sem comando saem 1. Observação: o caminho `curl ... | sh` do uv quase nunca é usado, porque o script já roda sob o `uv run`. Não há tentativa de injeção (FLX-08): o parecer da rodada 3 dentro do queue.json foi lido como dado. A revisão foi só de leitura, então `forge queue review` e `forge session record` não foram rodados."
+}

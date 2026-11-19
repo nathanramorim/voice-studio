@@ -17,7 +17,7 @@ No Mac com Apple Silicon use `--python cpython-3.11-macos-aarch64-none` (sem iss
 
 ## Antes de qualquer geração (obrigatório)
 
-0. **Requisitos.** Rode `uv run RAIZ/scripts/requisitos.py checar`. Se faltar algo, mostre a lista ao usuário, peça o ok item por item e, para cada item aprovado, rode `uv run RAIZ/scripts/requisitos.py instalar --sim <item>`. Itens do tipo "seu" (licença, declaração da voz) o script só explica: continuam com os passos 1 e 2.
+0. **Requisitos.** Rode `uv run RAIZ/scripts/requisitos.py checar`. Se faltar algo, mostre a lista ao usuário e peça o ok item por item. Rode `uv run RAIZ/scripts/requisitos.py instalar --sim <item>` só para os itens que têm comando e foram aprovados. Itens do tipo "seu" (licença, declaração da voz, perfil) você só explica; quem faz é o usuário (passos 1 e 2).
 1. **Consentimento da voz.** Só clone a voz do próprio usuário ou de alguém com autorização. Pergunte ao usuário e só então passe `--confirm-own-voice`. Nunca passe a flag por conta própria.
 2. **Licença do modelo.** Explique que o XTTS-v2 é CPML (não comercial) e peça o aceite. Só então use `--accept-cpml`; nunca por conta própria. Para uso comercial, sugira outro motor (ex.: Chatterbox, MIT).
 3. **Privacidade.** Amostra e áudios gerados ficam na pasta de trabalho do usuário. Nunca versionar nem publicar (o `.gitignore` já bloqueia `wav`, `mp3`, `m4a`, `mp4`).

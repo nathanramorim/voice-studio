@@ -205,3 +205,20 @@ def test_readme_prompt_pede_ok_item_a_item_e_antes_do_uv():
     texto = (RAIZ / "README.md").read_text(encoding="utf-8")
     assert "requisitos.py instalar --sim <item>" in texto
     assert "se não tiver o `uv`, me pergunte" in texto
+
+
+def test_instalar_item_do_usuario_pedido_pelo_nome_so_explica_e_nao_falha(tmp_path):
+    linhas = []
+    codigo = req.instalar(amb(tmp_path), sim=True, nomes=["perfil-de-voz", "modelo-xtts", "motor-xtts"],
+                          rodar=pytest.fail, saida=linhas.append)
+    assert codigo == 0
+    for nome in ("perfil-de-voz", "modelo-xtts", "motor-xtts"):
+        assert any(linha.startswith(f"- {nome}: Isto é com você:") for linha in linhas)
+
+
+def test_readme_e_skill_so_rodam_itens_com_comando():
+    for arq in ("README.md", "skills/voice-studio/SKILL.md"):
+        texto = (RAIZ / arq).read_text(encoding="utf-8")
+        assert "só para os itens que têm comando" in texto, arq
+    assert "é com você" in (RAIZ / "README.md").read_text(encoding="utf-8")
+    assert "você só explica" in (RAIZ / "skills/voice-studio/SKILL.md").read_text(encoding="utf-8")

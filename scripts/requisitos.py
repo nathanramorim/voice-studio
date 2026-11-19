@@ -298,6 +298,11 @@ def _rodar(cmd: list) -> int:
         return 1
 
 
+def _rodavel(i: Item) -> bool:
+    """O script só roda itens com comando e que não sejam do usuário (licença, declaração, chave)."""
+    return i.tipo != SEU and bool(i.comandos)
+
+
 def instalar(amb: Ambiente, sim: bool = False, interativo: bool | None = None,
              perguntar: Callable[[str], bool] = _perguntar, rodar: Callable[[list], int] = _rodar,
              saida: Callable[[str], None] = print, nomes: list | None = None) -> int:
@@ -322,11 +327,8 @@ def instalar(amb: Ambiente, sim: bool = False, interativo: bool | None = None,
         saida("Nada a instalar: tudo ok.")
         return 0
     for i in pendentes:
-        if i.tipo == SEU:
+        if not _rodavel(i):
             saida(f"- {i.nome}: Isto é com você: {i.explicacao}")
-            continue
-        if not i.comandos:
-            saida(f"- {i.nome}: {i.explicacao}")
             continue
         for cmd in i.comandos:
             texto = " ".join(cmd)
@@ -345,7 +347,7 @@ def instalar(amb: Ambiente, sim: bool = False, interativo: bool | None = None,
     if falhou:
         saida("Algum comando falhou: confira a mensagem acima e rode `checar`.")
         return 1
-    if nomes and any(i.estado != OK for i in final):
+    if nomes and any(i.estado != OK and _rodavel(i) for i in final):
         saida("Algum item pedido ainda não está ok: confira com `checar`.")
         return 1
     if falta_obrigatorio(final):
