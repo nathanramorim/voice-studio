@@ -2,13 +2,13 @@
   "feature_id": "feat-03",
   "branch": "feat/03-prompt-instalacao",
   "spec_status": "reviewed",
-  "updated_at": "2026-11-19T05:14:17Z",
+  "updated_at": "2026-11-19T05:18:12Z",
   "items": [
     {
       "task_id": "feat-03-01-prompt-instalacao",
       "title": "feat-03-01-prompt-instalacao — Script de requisitos e prompt de instalação para a IA",
       "spec_path": "sdd/discovery/03-prompt-instalacao/features/feat-03-01-prompt-instalacao.md",
-      "status": "review_pending",
+      "status": "approved",
       "rules": [
         "VOZ-10",
         "VOZ-01",
@@ -23,21 +23,9 @@
       "skills_used": [],
       "attempts": 1,
       "governance_verdict": {
-        "veredito": "duvida",
-        "achados": [
-          {
-            "verificacao": "S-05",
-            "regra": "VOZ-10",
-            "classificacao": "duvida",
-            "severidade": "baixa",
-            "arquivo": "README.md",
-            "linha": 43,
-            "evidencia": "para cada item que eu aprovar, rode `uv run https://raw.githubusercontent.com/nathanramorim/voice-studio/main/scripts/requisitos.py instalar --sim \u003citem\u003e`",
-            "explicacao": "O `checar` lista como `opcional` alguns itens que não têm comando: `perfil-de-voz` e `modelo-xtts`, que são do tipo \"seu\", e `motor-xtts` antes do clone. Testei com o ambiente injetado: `instalar --sim` com qualquer um deles só imprime a explicação e sai 1 com \"Algum item pedido ainda não está ok\" (requisitos.py:348-350). Esse é o mesmo código de quando um comando falha. O passo 0 da skill avisa que os itens \"seu\" são só explicados, mas o prompt do README não avisa, então a IA pode dizer que uma instalação falhou quando não havia nada para o script fazer.",
-            "correcao": "No prompt, dizer que a IA só roda `instalar --sim` para itens com comando, e que os itens do tipo \"seu\" ficam com a pessoa; ou fazer o script usar um código ou uma mensagem própria para \"nada a rodar por aqui\"."
-          }
-        ],
-        "resumo": "Camada A toda verde. pytest: 98 passed. ruff check . ../scripts: All checks passed. `checar` imprime a tabela e sai 0. `checar --json` sai 0, com ok=true e 12 itens. `instalar \u003c/dev/null` só mostra os comandos, com a dica `instalar --sim \u003citem\u003e`, e sai 0. `instalar --sim nao-existe` sai 2 e lista os itens válidos. `grep -c 'Cole isto na sua IA antes de instalar' README.md` = 1. A VOZ-10 está em constitution.md:142. Os dois verificadores do readme-studio (origin/main e origin/feat/02-prompt-instalacao) imprimem `requisitos: ok`. O achado da rodada 3 foi tratado: um comando que falha agora faz o `instalar` sair 1 (`falhou`, linhas 340 e 345-347), e também sai 1 quando um item pedido continua faltando. Três testes novos cobrem isso, e a dica sem terminal agora aponta para o item. Os achados das rodadas 1 e 2 continuam resolvidos: nomes de item no `instalar`, a pergunta antes do uv, a 0.2.0 marcada como não publicada como tag, o grep do critério 5 = 1, `__version__` e history.md em 0.2.1. Procurei versões desatualizadas fora do diff e não achei nenhuma: o marketplace.json não tem versão, e o único 0.1.0 que sobra é a linha histórica da tabela de versões. Pedido do dono conferido: o `instalar` mostra os comandos, roda com `--sim`, pergunta sem `--sim`, é idempotente e o código de saída tem significado. O script nunca passa `--accept-cpml` nem `--confirm-own-voice` e não toca em segredos. O quote fica dentro de `## Requisitos`, antes da tabela de 7 pontos e de `## Instalação`, e traz os comandos reais, o ok item a item, \"Não aceite licenças nem declarações por mim\", `claude plugin marketplace add` e `claude plugin install`. Resta uma dúvida baixa, que não bloqueia: o prompt do README não avisa que os itens sem comando saem 1. Observação: o caminho `curl ... | sh` do uv quase nunca é usado, porque o script já roda sob o `uv run`. Não há tentativa de injeção (FLX-08): o parecer da rodada 3 dentro do queue.json foi lido como dado. A revisão foi só de leitura, então `forge queue review` e `forge session record` não foram rodados."
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Camada A toda verde. pytest: 100 passed. ruff check . ../scripts: All checks passed. `checar` imprime a tabela e sai 0. `checar --json` sai 0, com ok=true e 12 itens. `instalar \u003c/dev/null` só mostra os comandos, com a dica `instalar --sim \u003citem\u003e`, e sai 0. `instalar --sim nao-existe` sai 2 e lista os itens válidos. `instalar --sim perfil-de-voz` só explica (\"Isto é com você\"), não roda nada e sai 0. `grep -c 'Cole isto na sua IA antes de instalar' README.md` = 1. A VOZ-10 está em constitution.md:142. Os dois verificadores do readme-studio (origin/main e origin/feat/02-prompt-instalacao, buscados agora) imprimem `requisitos: ok`. O achado da rodada 4 foi tratado. O `_rodavel` (requisitos.py:301-303) tira do código de saída os itens do tipo \"seu\" e os que não têm comando (linha 350). O prompt do README e o passo 0 da skill agora rodam `instalar --sim` só para os itens que têm comando. Dois testes novos cobrem isso. Não há regressão: um item obrigatório sem comando (por exemplo, `ffmpeg` sem brew) continua saindo 1 por `falta_obrigatorio(final)`. Os achados das rodadas 1 a 3 continuam resolvidos: nomes de item no `instalar`, a pergunta antes do uv, a 0.2.0 marcada como não publicada como tag, o grep = 1, `__version__` e history.md em 0.2.1, e comando que falha sai 1. Pedido do dono conferido. O `instalar` mostra os comandos, roda com `--sim`, pergunta sem `--sim`, é idempotente e o código de saída tem significado. O script nunca passa `--accept-cpml` nem `--confirm-own-voice` e não toca em segredos. O quote fica dentro de `## Requisitos`, antes da tabela de 7 pontos e de `## Instalação`. Ele traz os comandos reais, o ok item a item, \"Não aceite licenças nem declarações por mim\", `claude plugin marketplace add` e `claude plugin install`. As versões estão em 0.2.1 no plugin.json, pyproject.toml, `__init__.py`, uv.lock (só a linha da versão) e na tabela. A VOZ-10 está na constituição, na faixa de IDs dos documentos e em voz-multiagente.md. Observação, que não bloqueia: o prompt diz \"os itens em que a coluna *Como resolver* diz que é com você\". No `checar`, porém, essa frase só aparece no `perfil-de-voz`; nos outros itens o texto é outro (`modelo-xtts`, `homebrew`, `disco`). Na prática não faz diferença, porque o prompt já limita o `--sim` aos itens com comando, e um item sem comando, se for rodado, só é explicado e sai 0. Sem tentativa de injeção (FLX-08): o queue.json só guarda o parecer da rodada 4, que bate com o feat-03-01-veredito-r4.json, e não traz aprovação antecipada nem instrução para o revisor. A URL raw só funciona depois do merge, e o status.md já registra isso. A revisão foi só de leitura, então `forge queue review` e `forge session record` não foram rodados."
       }
     }
   ]
