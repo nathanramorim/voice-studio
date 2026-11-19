@@ -40,9 +40,9 @@ Funciona como plugin do **Claude Code**, com instruções prontas também para *
 
 > **Cole isto na sua IA antes de instalar:**
 >
-> "Verifique os requisitos do voice-studio: se não tiver o `uv`, instale com `brew install uv` (ou `curl -LsSf https://astral.sh/uv/install.sh | sh`). Depois rode `uv run https://raw.githubusercontent.com/nathanramorim/voice-studio/main/scripts/requisitos.py checar`. Se faltar algo, me mostre a lista e, com o meu ok, rode `uv run https://raw.githubusercontent.com/nathanramorim/voice-studio/main/scripts/requisitos.py instalar` para cada item. Não aceite licenças nem declarações por mim. Depois instale o plugin com `claude plugin marketplace add nathanramorim/voice-studio` e `claude plugin install voice-studio@voice-studio`."
+> "Verifique os requisitos do voice-studio: se não tiver o `uv`, me pergunte e, com o meu ok, instale com `brew install uv` (ou `curl -LsSf https://astral.sh/uv/install.sh | sh`). Depois rode `uv run https://raw.githubusercontent.com/nathanramorim/voice-studio/main/scripts/requisitos.py checar`. Se faltar algo, me mostre a lista, peça o meu ok item por item e, para cada item que eu aprovar, rode `uv run https://raw.githubusercontent.com/nathanramorim/voice-studio/main/scripts/requisitos.py instalar --sim <item>`. Não aceite licenças nem declarações por mim. Depois instale o plugin com `claude plugin marketplace add nathanramorim/voice-studio` e `claude plugin install voice-studio@voice-studio`."
 
-O script de requisitos só usa a biblioteca padrão do Python, então roda antes do clone (o repositório é público, não precisa de acesso). Com o repositório clonado, o mesmo vale como `uv run scripts/requisitos.py checar` (ou `--json`) e `uv run scripts/requisitos.py instalar` (pergunta antes de cada item; `--sim` roda sem perguntar). Ele nunca aceita a licença do XTTS (`--accept-cpml`) nem declara que a voz é sua (`--confirm-own-voice`): isso é sempre com você.
+O script de requisitos só usa a biblioteca padrão do Python, então roda antes do clone (o repositório é público, não precisa de acesso). Com o repositório clonado, o mesmo vale como `uv run scripts/requisitos.py checar` (ou `--json`) e `uv run scripts/requisitos.py instalar [--sim] [item ...]` (sem nomes, cobre tudo o que falta; pergunta antes de cada item; `--sim` roda sem perguntar). Ele nunca aceita a licença do XTTS (`--accept-cpml`) nem declara que a voz é sua (`--confirm-own-voice`): isso é sempre com você.
 
 | Ponto | O que precisa |
 |---|---|
@@ -131,8 +131,8 @@ Os pesos do modelo **não** estão neste repositório: são baixados na primeira
 
 | Versão | Novidades |
 |---|---|
-| **0.2.1** | Requisitos conferidos e instalados por script: `scripts/requisitos.py checar` (tabela ou `--json`) e `instalar` (pergunta antes de cada item; `--sim` roda sem perguntar), e o prompt "Cole isto na sua IA antes de instalar" no README. Nunca aceita licença nem declaração por você. |
-| **0.2.0** | Perfis de voz com consentimento registrado, vocabulário de pronúncia por idioma, catálogo de 6 idiomas (`pt` e `en` validados), comandos `falar` e `traduzir`, entrada e saída de áudio ou vídeo, proteção contra sobrescrever a entrada (`--sobrescrever`), skill única com adaptadores para Claude Code, agy e Codex. Falta o QA manual com voz real. |
+| **0.2.1** | Requisitos conferidos e instalados por script: `scripts/requisitos.py checar` (tabela ou `--json`) e `instalar [--sim] [item ...]` (só os itens citados, ou tudo o que falta; pergunta antes de cada item; `--sim` roda sem perguntar), e o prompt "Cole isto na sua IA antes de instalar" no README. Nunca aceita licença nem declaração por você. |
+| **0.2.0** (não publicada como tag) | Perfis de voz com consentimento registrado, vocabulário de pronúncia por idioma, catálogo de 6 idiomas (`pt` e `en` validados), comandos `falar` e `traduzir`, entrada e saída de áudio ou vídeo, proteção contra sobrescrever a entrada (`--sobrescrever`), skill única com adaptadores para Claude Code, agy e Codex. Falta o QA manual com voz real. |
 | **0.1.0** | Primeira versão: voz clonada local (XTTS-v2), narração com vocabulário de pronúncia, várias versões por fala com guarda de duração, dublagem por segmento, consentimento e aviso de licença, plugin com skill e os comandos `/clonar-voz` e `/dublar`. |
 
 ## Status e limites

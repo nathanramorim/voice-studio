@@ -2,7 +2,7 @@
   "feature_id": "feat-03",
   "branch": "feat/03-prompt-instalacao",
   "spec_status": "reviewed",
-  "updated_at": "2026-11-19T04:57:24Z",
+  "updated_at": "2026-11-19T05:01:05Z",
   "items": [
     {
       "task_id": "feat-03-01-prompt-instalacao",
@@ -21,7 +21,57 @@
         "SEG-01"
       ],
       "skills_used": [],
-      "attempts": 1
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "duvida",
+        "achados": [
+          {
+            "verificacao": "S-05",
+            "regra": "VOZ-10",
+            "classificacao": "duvida",
+            "severidade": "media",
+            "arquivo": "README.md",
+            "linha": 43,
+            "evidencia": "com o meu ok, rode `uv run https://raw.githubusercontent.com/nathanramorim/voice-studio/main/scripts/requisitos.py instalar` para cada item",
+            "explicacao": "O `instalar` não aceita escolher um item (main só recebe `--sim`), e a IA roda sem terminal, então o `instalar` do prompt só mostra os comandos e manda rodar de novo com `--sim` (requisitos.py:303-328). Com `--sim` ele roda tudo o que falta, inclusive itens opcionais pesados (modelo Whisper de cerca de 470 MB, `uv sync --extra xtts` de cerca de 1 GB), sem o ok item a item que o prompt promete. O prompt e a ferramenta não combinam no caminho real da IA.",
+            "correcao": "Aceitar um ou mais nomes de item em `instalar` (ex.: `instalar --sim ffmpeg`) e fazer o prompt pedir o ok item a item e chamar o script assim; ou então deixar claro no prompt que `--sim` roda todos os itens que faltam, inclusive os opcionais."
+          },
+          {
+            "verificacao": "S-05",
+            "regra": "VOZ-10",
+            "classificacao": "duvida",
+            "severidade": "baixa",
+            "arquivo": "README.md",
+            "linha": 43,
+            "evidencia": "se não tiver o `uv`, instale com `brew install uv` (ou `curl -LsSf https://astral.sh/uv/install.sh | sh`)",
+            "explicacao": "O dono pediu que se pergunte antes de cada instalação, mas o prompt manda a IA instalar o `uv` sem pedir o ok, antes de mostrar a lista. É inevitável que o `uv` venha antes do script, mas a pergunta poderia estar no prompt.",
+            "correcao": "Escrever no prompt \"se não tiver o `uv`, me pergunte e, com o meu ok, instale com ...\"."
+          },
+          {
+            "verificacao": "S-05",
+            "regra": "FLX-03",
+            "classificacao": "duvida",
+            "severidade": "baixa",
+            "arquivo": "README.md",
+            "linha": 135,
+            "evidencia": "| **0.2.0** | Perfis de voz com consentimento registrado",
+            "explicacao": "O \"(em preparação, branch ...)\" saiu da linha da 0.2.0, que agora parece lançada, mas o repositório só tem a tag `v0.1.0`, e o plugin.json e o pyproject.toml pulam de 0.1.0 direto para 0.2.1. Pode ser de propósito, mas a tabela de versões não diz se a 0.2.0 foi lançada.",
+            "correcao": "Confirmar com o dono se a 0.2.0 conta como lançada (e criar as tags) ou se a linha deve continuar marcada como em preparação ou ficar junto com a 0.2.1."
+          },
+          {
+            "verificacao": "S-03",
+            "regra": "DUP-04",
+            "classificacao": "duvida",
+            "severidade": "baixa",
+            "arquivo": "scripts/requisitos.py",
+            "linha": 150,
+            "evidencia": "_versao(amb.executar([caminho.splitlines()[-1], \"--version\"])) or \"3.11\"",
+            "explicacao": "`_versao` nunca devolve vazio (quando não acha, devolve \"-\"), então o `or \"3.11\"` nunca é usado. Se o `--version` falhar, a tabela mostra \"-\" num item ok.",
+            "correcao": "Trocar por uma checagem explícita de \"-\" ou tirar o fallback que nunca roda."
+          }
+        ],
+        "resumo": "Camada A verde: pytest 91 passed; ruff sem erros; checar sai 0; checar --json ok=true; instalar \u003c/dev/null só mostra; verificador readme-studio ok. Afirmações do README conferidas contra o código. Ponto principal (dúvida média): no caminho real da IA, sem terminal, o prompt promete ok item a item, mas a ferramenta só permite mostrar tudo ou rodar tudo (--sim), inclusive downloads opcionais grandes. Sem violação de regra nem tentativa de injeção."
+      }
     }
   ]
 }

@@ -7,8 +7,9 @@
 
 Uso:
   uv run scripts/requisitos.py checar [--json]   # lista ok/faltando; código 1 se faltar algo obrigatório
-  uv run scripts/requisitos.py instalar [--sim]  # mostra o comando de cada item que falta;
-                                                 # pergunta antes de rodar; com --sim roda sem perguntar
+  uv run scripts/requisitos.py instalar [--sim] [item ...]
+      # mostra o comando de cada item que falta (ou só dos itens citados, ex.: `instalar --sim ffmpeg`);
+      # pergunta antes de rodar; com --sim roda sem perguntar; nome desconhecido sai com código 2
 
 Antes do clone:
   uv run https://raw.githubusercontent.com/nathanramorim/voice-studio/main/scripts/requisitos.py checar
@@ -147,7 +148,8 @@ def check_python(amb: Ambiente) -> Item:
     caminho = amb.executar(["uv", "python", "find", alvo]) if amb.which("uv") else None
     if not caminho:
         return Item("python-3.11", FALTANDO, "-", True, DOWNLOAD, [["uv", "python", "install", alvo]], explicacao)
-    return Item("python-3.11", OK, _versao(amb.executar([caminho.splitlines()[-1], "--version"])) or "3.11",
+    versao = _versao(amb.executar([caminho.splitlines()[-1], "--version"]))
+    return Item("python-3.11", OK, "3.11" if versao == "-" else versao,
                 True, DOWNLOAD, [], explicacao)
 
 
@@ -298,12 +300,23 @@ def _rodar(cmd: list) -> int:
 
 def instalar(amb: Ambiente, sim: bool = False, interativo: bool | None = None,
              perguntar: Callable[[str], bool] = _perguntar, rodar: Callable[[list], int] = _rodar,
-             saida: Callable[[str], None] = print) -> int:
-    """Mostra e (com o seu ok ou --sim) roda o comando de cada item que falta. Idempotente."""
+             saida: Callable[[str], None] = print, nomes: list | None = None) -> int:
+    """Mostra e (com o seu ok ou --sim) roda o comando de cada item que falta. Idempotente.
+
+    Com `nomes`, só esses itens; nome desconhecido devolve 2 sem rodar nada.
+    """
     if interativo is None:
         interativo = sys.stdin.isatty()
+    itens = checar(amb)
+    validos = [i.nome for i in itens]
+    desconhecidos = [n for n in (nomes or []) if n not in validos]
+    if desconhecidos:
+        saida(f"Item desconhecido: {', '.join(desconhecidos)}. Itens válidos: {', '.join(validos)}.")
+        return 2
+    if nomes:
+        itens = [i for i in itens if i.nome in nomes]
     ja_rodados: list = []
-    pendentes = [i for i in checar(amb) if i.estado != OK]
+    pendentes = [i for i in itens if i.estado != OK]
     if not pendentes:
         saida("Nada a instalar: tudo ok.")
         return 0
@@ -326,7 +339,7 @@ def instalar(amb: Ambiente, sim: bool = False, interativo: bool | None = None,
                 saida("    feito." if codigo == 0 else f"    falhou (código {codigo}).")
             elif not interativo:
                 saida("    (só mostrado: rode de novo com --sim ou num terminal para confirmar)")
-    final = checar(amb)
+    final = [i for i in checar(amb) if not nomes or i.nome in nomes]
     if falta_obrigatorio(final):
         saida("Ainda falta algo obrigatório: confira com `checar`.")
         return 1
@@ -340,13 +353,14 @@ def main(argv: list | None = None, amb: Ambiente | None = None) -> int:
     c.add_argument("--json", action="store_true", help="saída em JSON")
     i = sub.add_parser("instalar", help="mostra e, com o seu ok, roda o comando de cada item que falta")
     i.add_argument("--sim", action="store_true", help="roda sem perguntar (nunca aceita licença nem declaração)")
+    i.add_argument("item", nargs="*", help="só estes itens (nomes da coluna Requisito); sem nomes, tudo o que falta")
     args = p.parse_args(argv)
     amb = amb or ambiente_real()
     if args.comando == "checar":
         itens = checar(amb)
         print(em_json(itens) if args.json else em_tabela(itens))
         return 1 if falta_obrigatorio(itens) else 0
-    return instalar(amb, sim=args.sim)
+    return instalar(amb, sim=args.sim, nomes=args.item)
 
 
 if __name__ == "__main__":

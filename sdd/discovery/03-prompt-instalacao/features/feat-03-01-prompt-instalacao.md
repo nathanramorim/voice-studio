@@ -24,15 +24,15 @@ Nenhuma (só biblioteca padrão; `ARQ-04`).
 `VOZ-10`, `VOZ-01`, `VOZ-02`, `VOZ-09`, `TST-04`, `FLX-07`, `ARQ-04`, `ARQ-06`, `SEG-01`.
 
 ## Escopo
-- `scripts/requisitos.py` com `checar` (tabela ou `--json`, código 1 se faltar obrigatório) e `instalar` (repete o `checar`, pula o que está ok, mostra o comando; sem `--sim` pergunta antes de cada um; sem terminal só mostra; com `--sim` roda sem perguntar; itens `seu` só explicados).
+- `scripts/requisitos.py` com `checar` (tabela ou `--json`, código 1 se faltar obrigatório) e `instalar [--sim] [item ...]` (sem nomes, tudo o que falta; com nomes, só esses; nome desconhecido sai 2 com a lista dos válidos; repete o `checar`, pula o que está ok, mostra o comando; sem `--sim` pergunta antes de cada um; sem terminal só mostra; com `--sim` roda sem perguntar; itens `seu` só explicados).
 - Itens: sistema, homebrew, uv (>= 0.5), Python 3.11 arm64 no Apple Silicon, ffmpeg, ffprobe, whisper-cli (opcional), modelo Whisper (opcional), motor com o extra xtts (opcional, o uv cria no primeiro uso), modelo XTTS-v2 (seu), perfil de voz (seu), disco.
-- README: quote "Cole isto na sua IA antes de instalar" dentro de `## Requisitos`, antes da tabela e da instalação; versão 0.2.1 e tabela de versões.
+- README: quote "Cole isto na sua IA antes de instalar" dentro de `## Requisitos`, antes da tabela e da instalação: a IA pergunta antes de instalar o uv, mostra a lista, pede o ok item por item e roda `instalar --sim <item>` para cada aprovado; versão 0.2.1 e tabela de versões (0.2.0 marcada como não publicada como tag).
 - Skill: passo 0 "Requisitos" antes do consentimento.
 - Constituição: `VOZ-10`, citada nas faixas de IDs (README, AGENTS, GEMINI, CLAUDE, CONTRIBUTING) e em `.agents/rules/voz-multiagente.md`.
 - Fora: tirar temas e perfis pessoais do repositório.
 
 ## Critérios de Aceitação Executáveis
-1. `cd engine && uv run --python cpython-3.11-macos-aarch64-none --group dev pytest -q` passa, incluindo `tests/test_requisitos.py` (checar, JSON, código de saída, instalar sem terminal, com "não", com `--sim` uma vez só e nunca com `--accept-cpml`/`--confirm-own-voice`, nada a instalar quando tudo ok, quote no README antes de `## Instalação`).
+1. `cd engine && uv run --python cpython-3.11-macos-aarch64-none --group dev pytest -q` passa, incluindo `tests/test_requisitos.py` (checar, JSON, código de saída, instalar sem terminal, com "não", com `--sim` uma vez só e nunca com `--accept-cpml`/`--confirm-own-voice`, nada a instalar quando tudo ok, só os itens citados, nome desconhecido sai 2, quote no README antes de `## Instalação`).
 2. `uv run --group dev ruff check . ../scripts` sem erros.
 3. `uv run scripts/requisitos.py checar` imprime a tabela e sai 0 nesta máquina; `uv run scripts/requisitos.py instalar </dev/null` só mostra comandos.
 4. `uv run verificar_readme.py README.md` (readme-studio `main`) imprime `requisitos: ok`.

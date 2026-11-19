@@ -149,3 +149,30 @@ def test_readme_tem_o_prompt_para_a_ia_antes_da_instalacao():
     assert "scripts/requisitos.py checar" in requisitos and "scripts/requisitos.py instalar" in requisitos
     assert "Não aceite licenças nem declarações por mim" in requisitos
     assert texto.index("Cole isto na sua IA") < texto.index("## Instalação")
+
+
+def test_instalar_so_os_itens_citados(tmp_path):
+    rodados = []
+    codigo = req.instalar(amb(tmp_path, tem=("brew", "uv")), sim=True, nomes=["whisper-cli"],
+                          rodar=lambda c: rodados.append(c) or 0, saida=lambda _: None)
+    assert rodados == [["brew", "install", "whisper-cpp"]]
+    assert codigo == 0  # ffmpeg faltando não entra: não foi pedido
+
+
+def test_instalar_item_desconhecido_sai_2_e_lista_os_validos(tmp_path):
+    linhas, rodados = [], []
+    codigo = req.instalar(amb(tmp_path, tem=("brew", "uv")), sim=True, nomes=["ffmpeg", "nada"],
+                          rodar=lambda c: rodados.append(c) or 0, saida=linhas.append)
+    assert codigo == 2 and rodados == []
+    assert "nada" in linhas[0] and "ffmpeg" in linhas[0] and "modelo-whisper" in linhas[0]
+
+
+def test_main_instalar_aceita_nomes_depois_do_sim(tmp_path, capsys):
+    assert req.main(["instalar", "--sim", "nada"], amb(tmp_path)) == 2
+    assert "Itens válidos" in capsys.readouterr().out
+
+
+def test_readme_prompt_pede_ok_item_a_item_e_antes_do_uv():
+    texto = (RAIZ / "README.md").read_text(encoding="utf-8")
+    assert "requisitos.py instalar --sim <item>" in texto
+    assert "se não tiver o `uv`, me pergunte" in texto
