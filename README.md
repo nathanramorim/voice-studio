@@ -36,18 +36,19 @@ Funciona como plugin do **Claude Code**, com instruções prontas também para *
 | 👤 **Perfis de voz** | Um perfil por voz ou sotaque, com amostra, consentimento e vocabulário por idioma. |
 | 🌎 **Tradução de áudio ou vídeo** | Transcreve, o agente traduz e a sua voz fala no idioma escolhido, no tempo da mídia (áudio entra e sai como áudio; vídeo, como vídeo). |
 
-## Antes de começar
+## Requisitos
 
-| Requisito | Para quê |
+| Ponto | O que precisa |
 |---|---|
-| [`uv`](https://docs.astral.sh/uv/) | Instala o Python 3.11 e as dependências do motor (você não precisa instalar o Python). |
-| `ffmpeg` (inclui o `ffprobe`) | Corta, acelera e mixa o áudio; detecta se a entrada tem vídeo. `brew install ffmpeg`. |
-| `whisper-cpp` e um modelo ggml (ex.: `ggml-small.bin`) | **Só para transcrever** (`traduzir`, `transcribe`). `brew install whisper-cpp`. |
-| Extra `xtts` | Traz o motor de voz e o PyTorch. É instalado com `--extra xtts`; o modelo (cerca de 2 GB) é baixado na primeira geração. |
-| Um agente com suporte a skills | Claude Code, agy ou Codex. Sem agente, a linha de comando funciona sozinha. |
-| Uma **amostra da sua voz** | 6 a 30 s de fala contínua, sem música nem outras vozes. |
+| **Onde roda** | Testado no **macOS com Apple Silicon** (CPU, sem GPU). Linux e Windows não foram testados. Agentes: Claude Code (plugin), agy e Codex (instruções prontas, ainda não validados); sem agente, a linha de comando funciona sozinha. No Apple Silicon, rode o `uv` com `--python cpython-3.11-macos-aarch64-none`: sem isso ele pode escolher um Python x86_64 (Rosetta) e o PyTorch não instala. |
+| **Programas** | [`uv`](https://docs.astral.sh/uv/) 0.5 ou mais novo (testado 0.9.7): `curl -LsSf https://astral.sh/uv/install.sh \| sh` ou `brew install uv`. Ele instala o **Python 3.11** exigido pelo motor (`>=3.11,<3.12`); você não instala Python à mão. `ffmpeg` com `ffprobe` (testado 9.0): `brew install ffmpeg`. **Só para transcrever** (`traduzir`, `transcribe`): whisper.cpp com o binário `whisper-cli` (testado 1.9.5): `brew install whisper-cpp`. |
+| **Downloads na primeira execução** | Na primeira `uv run --extra xtts`, o `uv` baixa o motor (`coqui-tts`) e o PyTorch para o ambiente do `engine/` (cerca de 1 GB). Na primeira fala, o modelo **XTTS-v2** (cerca de 2 GB) é baixado para `~/Library/Application Support/tts/` no macOS ou `~/.local/share/tts/` no Linux (mude com `TTS_HOME`). O modelo do Whisper **não** é baixado sozinho: baixe um modelo ggml uma vez, por exemplo o `small` (cerca de 470 MB): `mkdir -p ~/.cache/whisper && curl -L -o ~/.cache/whisper/ggml-small.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin`, e passe `--model ~/.cache/whisper/ggml-small.bin` (ou defina `VOICE_STUDIO_WHISPER_MODEL`). |
+| **Contas e chaves** | Nenhuma. Não há API, login nem chave: tudo roda na sua máquina. |
+| **Máquina** | Testado com 8 GB de RAM. Reserve cerca de 4 GB de disco (ambiente com PyTorch, modelo XTTS e modelo do Whisper). Em CPU, cada fala leva de 20 a 60 segundos. |
+| **Licenças e limites** | Código MIT; o modelo XTTS-v2 é **Coqui CPML, somente uso não comercial**, aceito por você com `--accept-cpml` (ou `VOICE_STUDIO_ACCEPT_CPML=1`). Detalhes em [Licenças](#licenças-leia-antes-de-usar) e no [`NOTICE.md`](NOTICE.md). Idiomas além de `pt` e `en` saem `validated: false`. |
+| **O que você fornece** | Uma **amostra da sua voz**: 6 a 30 s de fala contínua, sem música nem outras vozes (áudio ou vídeo). A declaração de que a voz é **sua** ou de quem autorizou (`--confirm-own-voice`) e o aceite da licença do modelo (`--accept-cpml`); o agente pergunta, nunca preenche por você. Para `traduzir`, o áudio ou vídeo de origem. |
 
-Roda em CPU: de 20 a 60 segundos por fala. Os perfis ficam em `~/.voice-studio/perfis/` (mude com `VOICE_STUDIO_HOME` ou `--perfis-dir`), sempre **fora** de qualquer repositório git.
+Os perfis ficam em `~/.voice-studio/perfis/` (mude com `VOICE_STUDIO_HOME` ou `--perfis-dir`), sempre **fora** de qualquer repositório git.
 
 ## Instalação
 
