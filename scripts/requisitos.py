@@ -63,6 +63,8 @@ class ReceitaInvalida(Exception):
 def _rodar_saida(argv: list) -> tuple[int, str]:
     """Roda sem shell; devolve (código, stdout+stderr). Código 127 se não rodou."""
     exe = shutil.which(argv[0]) or argv[0]
+    if inseguro_no_cmd(exe, argv):
+        return 126, ""
     try:
         r = subprocess.run([exe, *argv[1:]], check=False, capture_output=True, text=True,
                            timeout=TIMEOUT_CHECAR, encoding="utf-8", errors="replace")
@@ -73,6 +75,9 @@ def _rodar_saida(argv: list) -> tuple[int, str]:
 
 def _rodar_visivel(argv: list) -> int:
     exe = shutil.which(argv[0]) or argv[0]
+    if inseguro_no_cmd(exe, argv):
+        print(f"    recusado: {exe} passaria pelo cmd.exe com caracteres de shell")
+        return 126
     try:
         return subprocess.run([exe, *argv[1:]], check=False).returncode
     except OSError as e:
@@ -173,7 +178,7 @@ def _gpu_real(sistema: str, arch_hw: str) -> str:
 
 def _shell_real(sistema: str, env: dict) -> str:
     if sistema == "windows":
-        return "powershell" if env.get("PSModulePath") else "cmd"
+        return "windows"  # PowerShell ou cmd não dá para saber com certeza: as instruções mostram os dois
     return Path(env.get("SHELL", "sh")).name or "sh"
 
 
@@ -235,16 +240,25 @@ def expandir(texto: str, amb: Ambiente, raiz: Path) -> str | None:
 
 # ---------- trava: nunca agir pela pessoa ----------
 
-SHELLS = {"sh", "bash", "zsh", "fish", "dash", "ksh", "csh", "tcsh", "cmd", "powershell", "pwsh",
-          "iex", "invoke-expression", "eval"}
-ELEVA = {"sudo", "doas", "su", "runas", "pkexec", "gsudo"}
-EMBRULHO = {"env", "xargs", "nohup", "nice", "timeout", "time", "watch", "start"}
-META = set("|;&`$\n\r")
-REDIRECIONA = {">", ">>", "<", "<<", "2>", "1>"}
-SILENCIOSO = {"/quiet", "/passive", "/qn", "/s", "/silent", "/verysilent", "--silent", "-silent"}
-ACEITE_EXATO = {"--yes", "--assume-yes", "--noconfirm", "--no-confirm", "--non-interactive", "--force-yes",
-                "--auto-approve", "--unattended", "accept", "agree"}
+SHELLS = {"sh", "bash", "zsh", "fish", "dash", "ash", "ksh", "mksh", "csh", "tcsh", "yash", "nu", "xonsh",
+          "elvish", "busybox", "cmd", "powershell", "pwsh", "iex", "invoke-expression", "eval"}
+ELEVA = {"sudo", "doas", "su", "runas", "pkexec", "gsudo", "run0"}
+EMBRULHO_ARG0 = {"env", "xargs", "nohup", "nice", "timeout", "time", "watch", "start"}
+EMBRULHO = {"env", "xargs", "nohup"}
+RX_INTERPRETADOR = re.compile(r"^(python|pypy|py|node|nodejs|ruby|perl|php|deno|bun|osascript|lua|luajit|tclsh|wish|"
+                              r"rscript|julia)(\d+(\.\d+)*)?[wt]?$")
+OPCAO_DE_INTERPRETADOR = {"--version", "-v", "-V", "-m", "-I", "-B", "-u", "--help"}
+MODULOS_PERMITIDOS = {"pip", "venv", "ensurepip"}
+PROGRAMA_POSICIONAL = {"awk", "gawk", "mawk", "nawk", "busybox", "sed", "gsed"}
+EXECUTA_STRING = {"npx", "npm", "pnpm", "pnpx", "yarn", "bunx", "find"}
+OPCAO_QUE_EXECUTA = {"-c", "--call", "-exec", "-execdir", "-ok", "-okdir"}
+META = set("|;&`$^%<>\n\r")
+RX_SILENCIOSO = re.compile(r"^(/q[nbrf]?[!+-]?|/quiet|/passive|/s|/silent|/verysilent|--?silent)$", re.I)
+ACEITE_EXATO = {"yes", "assume-yes", "assumeyes", "noconfirm", "no-confirm", "non-interactive", "force-yes",
+                "auto-approve", "unattended", "quiet-yes", "accept", "agree"}  # comparados sem os traços
 ACEITE_PARTE = ("accept", "agree", "licen", "eula", "confirm", "consent")
+ACEITE_POR_PROGRAMA = {"winget": {"-h"}, "zypper": {"-n"}, "apk": {"--no-interactive"}}
+RX_VERSAO = re.compile(r"^[A-Za-z0-9_.\[\],-]*(?:[<>]=?|==|!=|~=)[0-9][0-9A-Za-z.*+!-]*$")
 
 
 def _nome(arg: str) -> str:
@@ -252,27 +266,74 @@ def _nome(arg: str) -> str:
     return nome[:-4] if nome.endswith(".exe") else nome
 
 
+def _metacaractere(arg: str) -> bool:
+    """`< >` só são aceitos num especificador de versão (`torch<2.9`, `>=3.11`); o resto é shell."""
+    sobra = set(arg) & META
+    if sobra and sobra <= {"<", ">"} and RX_VERSAO.match(arg):
+        return False
+    return bool(sobra)
+
+
+def _interpretador_inline(argv: list, nomes: list) -> bool:
+    """Depois de um interpretador, só opções de uma lista fechada e `-m` só com pip, venv ou ensurepip.
+
+    Exceção única: `uv python ...` (subcomando do uv, não o interpretador)."""
+    inicio = 2 if nomes[:2] == ["uv", "python"] else 0
+    for k in range(inicio, len(argv)):
+        if not argv[k].startswith("-") and RX_INTERPRETADOR.match(nomes[k]):
+            resto = argv[k + 1:]
+            if any(a.startswith("-") and a not in OPCAO_DE_INTERPRETADOR for a in resto):
+                return True
+            return any(a == "-m" and (i + 1 >= len(resto) or resto[i + 1] not in MODULOS_PERMITIDOS)
+                       for i, a in enumerate(resto))
+    return False
+
+
+def _executa_string(argv: list, nomes: list, soltos: set) -> bool:
+    """awk/sed com programa, `npx -c`, `npm exec --call=`, `find -exec`: equivalem a um shell."""
+    for k, n in enumerate(nomes):
+        if n in PROGRAMA_POSICIONAL and not argv[k].startswith("-"):
+            if any(a not in ("--version", "--help") for a in argv[k + 1:]):
+                return True
+    if soltos & EXECUTA_STRING:
+        return any(a in OPCAO_QUE_EXECUTA or a.startswith(("--call=", "-c=")) for a in argv)
+    return False
+
+
 def proibido(argv: list) -> str | None:
-    """Motivo pelo qual o comando poderia agir pela pessoa (ou passar por shell); None se for seguro."""
+    """Motivo pelo qual o comando poderia agir pela pessoa (ou passar por shell); None se for seguro.
+
+    Lista de bloqueio que prefere bloquear a mais (ADR-0005): shell, embrulho e administrador em qualquer
+    argumento que não seja opção; os falsos positivos aceitos estão no contrato (use `manual`)."""
     if not argv:
         return "comando vazio"
-    if _nome(argv[0]) in EMBRULHO:
-        return f"'{argv[0]}' embrulha outro comando"
+    nomes = [_nome(a) for a in argv]
+    soltos = {n for a, n in zip(argv, nomes, strict=True) if not a.startswith("-")}
+    if nomes[0] in EMBRULHO_ARG0 or soltos & EMBRULHO:
+        return "embrulha outro comando (env, xargs, nohup...)"
+    if soltos & SHELLS:
+        return "passa por um shell"
+    if soltos & ELEVA:
+        return "o motor nunca pede administrador sozinho (só mostra)"
+    if _interpretador_inline(argv, nomes) or _executa_string(argv, nomes, soltos):
+        return "código inline ou programa como texto (equivale a um shell)"
+    por_programa = set().union(*(ACEITE_POR_PROGRAMA.get(n, set()) for n in soltos))
     for arg in argv:
-        if META & set(arg) or arg in REDIRECIONA:
+        if _metacaractere(arg):
             return f"metacaractere de shell em '{arg}'"
-        if arg.lower() in SILENCIOSO:
-            return f"'{arg}' instala em silêncio (aceitaria a licença)"
-        if not arg.startswith("-") and _nome(arg) in SHELLS:
-            return f"'{arg}' é um shell"
-        if not arg.startswith("-") and _nome(arg) in ELEVA:
-            return f"'{arg}': o motor nunca pede administrador sozinho (só mostra)"
+        if RX_SILENCIOSO.match(arg) or arg in por_programa:
+            return f"'{arg}' instala em silêncio ou confirma pela pessoa"
         limpo = re.sub(r"(?:[A-Za-z][\w+.-]*://|~|\.{0,2}[\\/])[^\s=:,]*",
                        lambda m: _nome(m.group(0)), arg)
         for t in (t for t in re.split(r"[\s=:,]+", limpo.lower()) if t):
-            if t in ACEITE_EXATO or any(p in t for p in ACEITE_PARTE) or re.fullmatch(r"-[a-z]*y[a-z]*", t):
+            if t.lstrip("-") in ACEITE_EXATO or any(p in t for p in ACEITE_PARTE) or re.fullmatch(r"-[a-z]*y[a-z]*", t):
                 return f"'{arg}' aceitaria ou confirmaria algo pela pessoa"
     return None
+
+
+def inseguro_no_cmd(exe: str, argv: list) -> bool:
+    """No Windows, .cmd/.bat passam pelo cmd.exe: recusa qualquer caractere que ele interprete."""
+    return exe.lower().endswith((".cmd", ".bat")) and any(set(a) & (META | {"!", "(", ")", '"'}) for a in argv[1:])
 
 
 # ---------- receita: leitura e validação ----------
@@ -283,7 +344,7 @@ CHAVES_RECEITA = {"quando", "comandos", "admin", "baixar", "manual", "nao_suport
                   "path", "nota"}
 CHAVES_QUANDO = {"sistema", "arch", "gpu", "distro", "gerenciador", "wsl", "rosetta"}
 CHAVES_CHECAR = {"comando", "regex", "versao_regex", "versao_minima", "versao_maxima", "arquivo", "env",
-                 "disco_gb", "memoria_gb", "procurar_em", "sensivel"}
+                 "disco_gb", "memoria_gb", "procurar_em", "sensivel", "arch_binario"}
 
 
 @dataclass
@@ -347,9 +408,12 @@ def carregar(arquivo: str, _vistos: set | None = None) -> tuple[dict, list]:
     return dados["projeto"], itens
 
 
-def _erros_texto(valor, onde: str) -> list:
+def _erros_texto(valor, onde: str, env: bool = False) -> list:
+    """Texto não vazio com placeholders conhecidos; {env:NOME} só onde nada é mostrado (checar)."""
     if not isinstance(valor, str) or not valor.strip():
         return [f"{onde}: precisa ser texto não vazio"]
+    if not env and "{env:" in valor:
+        return [f"{onde}: {{env:...}} só vale em checar (o valor poderia ser segredo e apareceria na saída)"]
     ruins = [m.group(1) for m in RX_PH.finditer(valor) if m.group(1) not in PLACEHOLDERS
              or (m.group(1) == "env") != bool(m.group(2))]
     sobra = re.sub(RX_PH, "", valor)
@@ -359,12 +423,12 @@ def _erros_texto(valor, onde: str) -> list:
     return []
 
 
-def _erros_comando(cmd, onde: str) -> list:
+def _erros_comando(cmd, onde: str, env: bool = False) -> list:
     if not isinstance(cmd, list) or not cmd or not all(isinstance(a, str) and a for a in cmd):
         return [f"{onde}: comando é lista de argumentos (texto não vazio), sem shell"]
     motivo = proibido(cmd)
     erros = [f"{onde}: recusado pela trava: {motivo}"] if motivo else []
-    return erros + [e for a in cmd for e in _erros_texto(a, onde)]
+    return erros + [e for a in cmd for e in _erros_texto(a, onde, env)]
 
 
 def _erros_checar(c, onde: str) -> list:
@@ -372,7 +436,7 @@ def _erros_checar(c, onde: str) -> list:
         return [f"{onde}: checar precisa ser tabela"]
     erros = [f"{onde}: chave desconhecida '{k}'" for k in c if k not in CHAVES_CHECAR]
     if "comando" in c:
-        erros += _erros_comando(c["comando"], f"{onde}.comando")
+        erros += _erros_comando(c["comando"], f"{onde}.comando", env=True)
     for k in ("regex", "versao_regex"):
         if k in c:
             try:
@@ -384,12 +448,14 @@ def _erros_checar(c, onde: str) -> list:
             erros.append(f"{onde}.{k}: use números como 3.11 ou 0.5.0")
     arquivos = c.get("arquivo", [])
     for a in ([arquivos] if isinstance(arquivos, str) else arquivos) + list(c.get("procurar_em", [])):
-        erros += _erros_texto(a, f"{onde}.arquivo")
+        erros += _erros_texto(a, f"{onde}.arquivo", env=True)
     if "env" in c and not RX_VAR.fullmatch(str(c["env"])):
         erros.append(f"{onde}.env: nome de variável inválido")
     for k in ("disco_gb", "memoria_gb"):
         if k in c and not isinstance(c[k], (int, float)):
             erros.append(f"{onde}.{k}: número")
+    if "arch_binario" in c and (c["arch_binario"] not in ARCHS or "comando" not in c):
+        erros.append(f"{onde}.arch_binario: use arm64 ou x64, junto com comando")
     return erros
 
 
@@ -486,6 +552,8 @@ def _erros_item(d, n: int) -> list:
             erros.append(f"{onde}.variavel: precisa de nome")
         elif "valor" in v and RX_SEGREDO.search(v["nome"]):
             erros.append(f"{onde}.variavel: '{v['nome']}' parece segredo: sem valor na receita (use credencial)")
+        elif "valor" in v:
+            erros += _erros_texto(v["valor"], f"{onde}.variavel.valor")
     return erros
 
 
@@ -604,7 +672,7 @@ def _versao_de(saida: str, regex: str | None) -> str:
 
 def conferir(c: dict, amb: Ambiente, raiz: Path) -> tuple[bool, str, str]:
     """Aplica a checagem: (passou, versão, observação)."""
-    sensivel = c.get("sensivel", False)
+    sensivel = c.get("sensivel", False) or any("{env:" in a for a in c.get("comando", []))
     versao = "-"
     if "env" in c and not amb.env.get(c["env"]):
         return False, "-", f"variável {c['env']} não definida"
@@ -645,7 +713,34 @@ def conferir(c: dict, amb: Ambiente, raiz: Path) -> tuple[bool, str, str]:
             return False, versao, f"precisa de {c['versao_minima']} ou mais nova"
         if "versao_maxima" in c and (versao == "-" or _num(versao) >= _num(str(c["versao_maxima"]))):
             return False, versao, f"precisa ser anterior a {c['versao_maxima']}"
+        if "arch_binario" in c:
+            archs = arch_do_binario(amb.which(argv[0]) or "")
+            if c["arch_binario"] not in archs:
+                return False, versao, f"o binário é {'/'.join(sorted(archs)) or '?'}, precisa de {c['arch_binario']}"
     return True, ("-" if sensivel else versao), ""
+
+
+def arch_do_binario(caminho: str) -> set:
+    """Arquiteturas do executável lendo o cabeçalho (Mach-O, universal, ELF ou PE); vazio se não souber."""
+    try:
+        with open(Path(caminho).resolve(), "rb") as f:
+            cab = f.read(4096)
+    except OSError:
+        return set()
+    macho = {0x0100000C: "arm64", 0x01000007: "x64"}
+    if cab[:4] == b"\xcf\xfa\xed\xfe":
+        return {macho.get(int.from_bytes(cab[4:8], "little"), "?")} - {"?"}
+    if cab[:4] == b"\xca\xfe\xba\xbe":
+        n = int.from_bytes(cab[4:8], "big")
+        tipos = [int.from_bytes(cab[8 + 20 * k:12 + 20 * k], "big") for k in range(min(n, 8))]
+        return {macho[t] for t in tipos if t in macho}
+    if cab[:4] == b"\x7fELF":
+        return {{0xB7: "arm64", 0x3E: "x64"}.get(int.from_bytes(cab[18:20], "little"), "?")} - {"?"}
+    if cab[:2] == b"MZ" and len(cab) > 0x40:
+        pe = int.from_bytes(cab[0x3C:0x40], "little")
+        if cab[pe:pe + 4] == b"PE\0\0":
+            return {{0xAA64: "arm64", 0x8664: "x64"}.get(int.from_bytes(cab[pe + 4:pe + 6], "little"), "?")} - {"?"}
+    return set()
 
 
 def _existe(caminho: str) -> bool:
@@ -662,10 +757,11 @@ def _existe(caminho: str) -> bool:
 
 
 def _fora_do_path(exe: str, c: dict, amb: Ambiente, raiz: Path) -> str:
+    """Pasta (como mostrar) onde o programa está fora do PATH; com {env:} mostra o placeholder, nunca o valor."""
     for pasta in c.get("procurar_em", []):
         base = expandir(pasta, amb, raiz)
         if base and any((Path(base) / (exe + ext)).is_file() for ext in ("", ".exe", ".cmd")):
-            return base
+            return pasta if "{env:" in pasta else base
     return ""
 
 
@@ -679,8 +775,9 @@ def _texto_comando(cmd: list, admin: bool, amb: Ambiente) -> str:
 def instrucao_path(pasta: str, amb: Ambiente) -> str:
     sh = amb.shell
     if amb.sistema == "windows":
-        return (f'[Environment]::SetEnvironmentVariable("Path", "{pasta};" + '
-                f'[Environment]::GetEnvironmentVariable("Path", "User"), "User")  (PowerShell; abra outro terminal)')
+        return (f'PowerShell: [Environment]::SetEnvironmentVariable("Path", "{pasta};" + '
+                '[Environment]::GetEnvironmentVariable("Path", "User"), "User")  (ou Configurações > Variáveis '
+                'de ambiente; abra outro terminal)')
     if sh == "fish":
         return f"fish_add_path {pasta}"
     rc = {"zsh": "~/.zshrc", "bash": "~/.bashrc"}.get(sh, "~/.profile")
@@ -689,9 +786,8 @@ def instrucao_path(pasta: str, amb: Ambiente) -> str:
 
 def instrucao_variavel(nome: str, valor: str, amb: Ambiente) -> str:
     if amb.sistema == "windows":
-        if amb.shell == "cmd":
-            return f'setx {nome} "{valor}"'
-        return f'[Environment]::SetEnvironmentVariable("{nome}", "{valor}", "User")  (PowerShell)'
+        return (f'PowerShell: [Environment]::SetEnvironmentVariable("{nome}", "{valor}", "User")  '
+                f'ou cmd: setx {nome} "{valor}"')
     if amb.shell == "fish":
         return f'set -Ux {nome} "{valor}"'
     rc = {"zsh": "~/.zshrc", "bash": "~/.bashrc"}.get(amb.shell, "~/.profile")
@@ -935,19 +1031,22 @@ def main(argv: list | None = None, amb: Ambiente | None = None) -> int:
     ap = argparse.ArgumentParser(prog="requisitos.py", description=(
         "Confere e instala, com o seu ok, o que este repositório precisa (Linux, Windows e macOS). "
         "Nunca aceita licença, consentimento ou login por você."))
-    ap.add_argument("--arquivo", help="requisitos.toml (caminho ou URL https); padrão: o mais próximo")
+    ajuda_arq = "requisitos.toml (caminho ou URL https); padrão: o mais próximo"
+    ap.add_argument("--arquivo", help=ajuda_arq)
     ap.add_argument("--version", action="version", version=f"requisitos.py {VERSAO}")
+    comum = argparse.ArgumentParser(add_help=False)
+    comum.add_argument("--arquivo", default=argparse.SUPPRESS, help=ajuda_arq)
     sub = ap.add_subparsers(dest="comando", required=True)
     p = sub.add_parser("plataforma", help="mostra o que foi detectado nesta máquina")
     p.add_argument("--json", action="store_true")
-    sub.add_parser("validar", help="confere o requisitos.toml (código 2 se inválido)")
-    c = sub.add_parser("checar", help="lista cada requisito; código 1 se faltar algo obrigatório")
+    sub.add_parser("validar", parents=[comum], help="confere o requisitos.toml (código 2 se inválido)")
+    c = sub.add_parser("checar", parents=[comum], help="lista cada requisito; código 1 se faltar algo obrigatório")
     c.add_argument("--json", action="store_true", help="saída em JSON")
-    i = sub.add_parser("instalar", help="instala o que falta, na ordem, pedindo o seu ok")
+    i = sub.add_parser("instalar", parents=[comum], help="instala o que falta, na ordem, pedindo o seu ok")
     i.add_argument("item", nargs="*", help="só estes itens (e as suas dependências)")
     i.add_argument("--sim", action="store_true", help="roda sem perguntar (nunca aceita licença nem declaração)")
     i.add_argument("--dry-run", action="store_true", help="só mostra o plano; não roda nada")
-    sub.add_parser("prompt", help='imprime o bloco "Cole isto na sua IA" para o README')
+    sub.add_parser("prompt", parents=[comum], help='imprime o bloco "Cole isto na sua IA" para o README')
     args = ap.parse_args(argv)
     amb = amb or ambiente_real()
     if args.comando == "plataforma":

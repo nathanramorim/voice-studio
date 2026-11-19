@@ -2,7 +2,7 @@
   "feature_id": "feat-03",
   "branch": "feat/03-prompt-instalacao",
   "spec_status": "reviewed",
-  "updated_at": "2026-11-19T09:54:20Z",
+  "updated_at": "2026-11-19T10:45:05Z",
   "items": [
     {
       "task_id": "feat-03-01-prompt-instalacao",
@@ -25,7 +25,7 @@
       "governance_verdict": {
         "veredito": "conforme",
         "achados": [],
-        "resumo": "Camada A toda verde. pytest: 100 passed. ruff check . ../scripts: All checks passed. `checar` imprime a tabela e sai 0. `checar --json` sai 0, com ok=true e 12 itens. `instalar \u003c/dev/null` só mostra os comandos, com a dica `instalar --sim \u003citem\u003e`, e sai 0. `instalar --sim nao-existe` sai 2 e lista os itens válidos. `instalar --sim perfil-de-voz` só explica (\"Isto é com você\"), não roda nada e sai 0. `grep -c 'Cole isto na sua IA antes de instalar' README.md` = 1. A VOZ-10 está em constitution.md:142. Os dois verificadores do readme-studio (origin/main e origin/feat/02-prompt-instalacao, buscados agora) imprimem `requisitos: ok`. O achado da rodada 4 foi tratado. O `_rodavel` (requisitos.py:301-303) tira do código de saída os itens do tipo \"seu\" e os que não têm comando (linha 350). O prompt do README e o passo 0 da skill agora rodam `instalar --sim` só para os itens que têm comando. Dois testes novos cobrem isso. Não há regressão: um item obrigatório sem comando (por exemplo, `ffmpeg` sem brew) continua saindo 1 por `falta_obrigatorio(final)`. Os achados das rodadas 1 a 3 continuam resolvidos: nomes de item no `instalar`, a pergunta antes do uv, a 0.2.0 marcada como não publicada como tag, o grep = 1, `__version__` e history.md em 0.2.1, e comando que falha sai 1. Pedido do dono conferido. O `instalar` mostra os comandos, roda com `--sim`, pergunta sem `--sim`, é idempotente e o código de saída tem significado. O script nunca passa `--accept-cpml` nem `--confirm-own-voice` e não toca em segredos. O quote fica dentro de `## Requisitos`, antes da tabela de 7 pontos e de `## Instalação`. Ele traz os comandos reais, o ok item a item, \"Não aceite licenças nem declarações por mim\", `claude plugin marketplace add` e `claude plugin install`. As versões estão em 0.2.1 no plugin.json, pyproject.toml, `__init__.py`, uv.lock (só a linha da versão) e na tabela. A VOZ-10 está na constituição, na faixa de IDs dos documentos e em voz-multiagente.md. Observação, que não bloqueia: o prompt diz \"os itens em que a coluna *Como resolver* diz que é com você\". No `checar`, porém, essa frase só aparece no `perfil-de-voz`; nos outros itens o texto é outro (`modelo-xtts`, `homebrew`, `disco`). Na prática não faz diferença, porque o prompt já limita o `--sim` aos itens com comando, e um item sem comando, se for rodado, só é explicado e sai 0. Sem tentativa de injeção (FLX-08): o queue.json só guarda o parecer da rodada 4, que bate com o feat-03-01-veredito-r4.json, e não traz aprovação antecipada nem instrução para o revisor. A URL raw só funciona depois do merge, e o status.md já registra isso. A revisão foi só de leitura, então `forge queue review` e `forge session record` não foram rodados."
+        "resumo": "Camada A toda verde. pytest: 100 passed. ruff check . ../scripts: All checks passed. `checar` imprime a tabela e sai 0. `checar --json` sai 0, com ok=true e 12 itens. `instalar </dev/null` só mostra os comandos, com a dica `instalar --sim <item>`, e sai 0. `instalar --sim nao-existe` sai 2 e lista os itens válidos. `instalar --sim perfil-de-voz` só explica (\"Isto é com você\"), não roda nada e sai 0. `grep -c 'Cole isto na sua IA antes de instalar' README.md` = 1. A VOZ-10 está em constitution.md:142. Os dois verificadores do readme-studio (origin/main e origin/feat/02-prompt-instalacao, buscados agora) imprimem `requisitos: ok`. O achado da rodada 4 foi tratado. O `_rodavel` (requisitos.py:301-303) tira do código de saída os itens do tipo \"seu\" e os que não têm comando (linha 350). O prompt do README e o passo 0 da skill agora rodam `instalar --sim` só para os itens que têm comando. Dois testes novos cobrem isso. Não há regressão: um item obrigatório sem comando (por exemplo, `ffmpeg` sem brew) continua saindo 1 por `falta_obrigatorio(final)`. Os achados das rodadas 1 a 3 continuam resolvidos: nomes de item no `instalar`, a pergunta antes do uv, a 0.2.0 marcada como não publicada como tag, o grep = 1, `__version__` e history.md em 0.2.1, e comando que falha sai 1. Pedido do dono conferido. O `instalar` mostra os comandos, roda com `--sim`, pergunta sem `--sim`, é idempotente e o código de saída tem significado. O script nunca passa `--accept-cpml` nem `--confirm-own-voice` e não toca em segredos. O quote fica dentro de `## Requisitos`, antes da tabela de 7 pontos e de `## Instalação`. Ele traz os comandos reais, o ok item a item, \"Não aceite licenças nem declarações por mim\", `claude plugin marketplace add` e `claude plugin install`. As versões estão em 0.2.1 no plugin.json, pyproject.toml, `__init__.py`, uv.lock (só a linha da versão) e na tabela. A VOZ-10 está na constituição, na faixa de IDs dos documentos e em voz-multiagente.md. Observação, que não bloqueia: o prompt diz \"os itens em que a coluna *Como resolver* diz que é com você\". No `checar`, porém, essa frase só aparece no `perfil-de-voz`; nos outros itens o texto é outro (`modelo-xtts`, `homebrew`, `disco`). Na prática não faz diferença, porque o prompt já limita o `--sim` aos itens com comando, e um item sem comando, se for rodado, só é explicado e sai 0. Sem tentativa de injeção (FLX-08): o queue.json só guarda o parecer da rodada 4, que bate com o feat-03-01-veredito-r4.json, e não traz aprovação antecipada nem instrução para o revisor. A URL raw só funciona depois do merge, e o status.md já registra isso. A revisão foi só de leitura, então `forge queue review` e `forge session record` não foram rodados."
       }
     },
     {
@@ -50,6 +50,50 @@
         "veredito": "conforme",
         "achados": [],
         "resumo": "Rodada 3, HEAD 782c0e5. Camada A toda verde: validar 0 (16 requisitos, 3 sistemas); checar --json 0 com JSON válido; pytest 91 e ruff ok; sha256 dos 3 arquivos = skills.lock = git show 5f63e02, .gitattributes -text; prompt literal no README, 0 'brew install uv' e 0 'install.sh | sh'; verificador do readme-studio (d60f02e) requisitos: ok; gh pr checks 5 verde em ubuntu, windows e macos (run 44499973016, 782c0e5); forge gate em bloqueio reprova só no P-13 falso positivo em engine/.venv não versionado e passa com rc 0 sobre git archive HEAD. Achados da r2 resolvidos (bootstrap --sim primeiro com --arquivo, piloto com 15 itens + runtime-vc, corpo do PR com SEG-01 e forge gate). Camada B sem regressões: particularidades por sistema cobertas, Homebrew nunca único caminho, versão 0.3.0 em todos os lugares, sem referência ao script antigo, sem dependência nova, CI nos 3 sistemas, README.antigo.md não versionado, sem tentativa de injeção."
+      }
+    },
+    {
+      "task_id": "fix-03-01-motor-v0.1.0",
+      "title": "Fix 03-01: motor de requisitos fixado na tag v0.1.0",
+      "spec_path": "sdd/discovery/03-prompt-instalacao/fixes/fix-03-01-motor-v0.1.0.md",
+      "status": "approved",
+      "rules": [
+        "ARQ-04",
+        "ARQ-06",
+        "VOZ-10",
+        "TST-04",
+        "FLX-07",
+        "SEG-01"
+      ],
+      "skills_used": [],
+      "attempts": 1,
+      "governance_verdict": {
+        "veredito": "conforme",
+        "achados": [
+          {
+            "verificacao": "S-05",
+            "regra": "FLX-07",
+            "classificacao": "duvida",
+            "severidade": "baixa",
+            "arquivo": "sdd/discovery/03-prompt-instalacao/status.md",
+            "linha": 5,
+            "evidencia": "**Sobras:** URLs raw só valem após o merge; motor já tem 1775d2d (fica no 5f63e02 por decisão); ...",
+            "explicacao": "O PR não atualizou o status da iniciativa. A linha 3 ainda diz `requisitos-para-ia@5f63e02` e a linha 5 diz que o motor fica no 5f63e02 por decisão, mas este fix reverte essa decisão. O critério 6 aceita status como histórico, só que o campo Sobras fala do estado atual e agora está desatualizado.",
+            "correcao": "Registrar o fix-03-01 (0.3.1, motor em v0.1.0/93abe08) no status.md e tirar ou corrigir a sobra que diz que o motor fica no 5f63e02 por decisão."
+          },
+          {
+            "verificacao": "S-06",
+            "regra": "ARQ-04",
+            "classificacao": "duvida",
+            "severidade": "baixa",
+            "arquivo": "scripts/requisitos.py",
+            "linha": 0,
+            "evidencia": "git ls-files -s: 100755 85773f9fc8afb56b72ec525cf3c79058d71c2a97 scripts/requisitos.py; git ls-tree v0.1.0: 100644 blob 85773f9fc8afb56b72ec525cf3c79058d71c2a97 scripts/requisitos.py",
+            "explicacao": "Os bytes são iguais ao blob da tag, mas o modo do arquivo no índice é 100755 e na tag é 100644. A diferença já existia antes deste PR, que não mexe no modo, e não afeta o sha256 nem o teste do lock.",
+            "correcao": "Opcional: alinhar com git update-index --chmod=-x em um follow-up, ou registrar que o bit executável é intencional."
+          }
+        ],
+        "resumo": "Revisão só de leitura do PR #6 (HEAD 9bc374f, igual ao headRefOid do PR, base main, 1 commit, 12 arquivos). Critério 1: nos três arquivos, git hash-object = rev-parse v0.1.0:scripts/<f> (requisitos.py 85773f9, bootstrap.sh 346a30c, bootstrap.ps1 e1af6c4), e o sha256 local = sha256 do git show da tag = skills.lock (8e7dcfa…, 583897…, 49645f…). A tag v0.1.0 é anotada, aponta para o commit 93abe08895a7… (igual ao commit do lock) e existe no remoto. O lock tem ref v0.1.0, e o .gitattributes mantém -text nos três arquivos. Critério 2: validar sai 0 com 'receita ok: 16 requisitos, macos, linux, windows cobertos'. Critério 3: checar --json sai 0 com JSON válido, e a saída de prompt (903 caracteres) aparece literal no README. Critério 4: pytest tests/test_requisitos.py dá 12 passed, e o teste do lock agora confere ref v0.1.0 e commit 93abe08. Critério 5: gh pr checks 6 verde em ubuntu, windows e macos (run 44507961537). Critério 6: git grep 5f63e02 só acha histórico (feat-03-02, vereditos, queue.json, entradas antigas do history.md, a spec do fix, a nota 'antes no commit 5f63e02' do README da 0.3.1) e o status.md, que está desatualizado (achado baixo). O ref antigo feat/0001 aparece só na spec da feat-03-02 e na spec do fix. A versão 0.3.1 está no plugin.json, no engine/pyproject.toml, no __init__.py e no uv.lock (só a linha da versão mudou), com linha no README e no sdd/releases/history.md. Não sobrou nenhuma 0.3.0 viva fora da tabela histórica. Nenhuma dependência nova (ARQ-04). Nenhum código próprio mudou além do cabeçalho do requisitos.toml e do teste. O README.antigo.md foi ignorado e continua sem versionar. Não houve tentativa de injeção no diff nem no corpo do PR (FLX-08). Restam dois achados baixos, que não bloqueiam."
       }
     }
   ]

@@ -31,7 +31,7 @@ def itens():
 
 def test_copia_do_motor_bate_com_o_skills_lock():
     lock = json.loads((RAIZ / "skills.lock").read_text(encoding="utf-8"))["skills"][0]
-    assert lock["commit"].startswith("5f63e02")
+    assert lock["ref"] == "v0.1.0" and lock["commit"].startswith("93abe08")
     for destino, sha in lock["arquivos"].items():
         assert hashlib.sha256((RAIZ / destino).read_bytes()).hexdigest() == sha, destino
 

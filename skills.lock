@@ -4,7 +4,7 @@
     {
       "nome": "requisitos-para-ia",
       "repo": "nathanramorim/requisitos-para-ia",
-      "ref": "feat/0001-motor-multiplataforma",
+      "ref": "v0.1.0",
       "modo": "copia",
       "destinos": [
         {
@@ -20,11 +20,11 @@
           "destino": "scripts/bootstrap.ps1"
         }
       ],
-      "commit": "5f63e02fdb266817e70d27d7073f2c7223db4f9c",
+      "commit": "93abe08895a7e4db3dc032da4ec2ef43bf318766",
       "arquivos": {
-        "scripts/requisitos.py": "4335b6305ecc335809b40662e0984ad3260ff633c92d929d377e111ef3626192",
+        "scripts/requisitos.py": "8e7dcfa147148e6bb069d02512a98174c69225a3e08080bb13090a8b6f863f64",
         "scripts/bootstrap.sh": "583897668b8046affcae501b02be6fa04313c614b5713be66aec3ff906baec5a",
-        "scripts/bootstrap.ps1": "8b3b4576fbebbaba6ea420fda27d77c57373563588aafa1fb4e7c5f5767235e2"
+        "scripts/bootstrap.ps1": "49645fdcbb5619d122cf79e8f254c9b65c1271dd2a30f74a3c23600effe35464"
       }
     }
   ]

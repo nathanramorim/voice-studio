@@ -4,6 +4,13 @@ Este arquivo registra o histórico de entregas de produto deste projeto.
 
 ## Entregas
 
+### Versão 0.3.1 — Motor de requisitos na tag v0.1.0
+
+Fix `fix-03-01-motor-v0.1.0` (`fix/03-01-motor-v0.1.0`).
+
+*   **Motor vendorizado:** os três arquivos copiados de `nathanramorim/requisitos-para-ia@v0.1.0` (commit `93abe08`), no lugar do commit `5f63e02`; `skills.lock` com `ref`, `commit` e sha256 novos.
+*   **Receita:** passa no `validar` mais estrito da v0.1.0 sem mudança; o bloco do README (`requisitos.py prompt`) saiu idêntico.
+
 ### Versão 0.3.0 — Requisitos em Linux, Windows e macOS pelo motor multiplataforma
 
 Iniciativa 03, task feat-03-02 (`feat/03-prompt-instalacao`, mesmo PR da 0.2.1).
