@@ -1,0 +1,27 @@
+{
+  "feature_id": "feat-03",
+  "branch": "feat/03-prompt-instalacao",
+  "spec_status": "reviewed",
+  "updated_at": "2026-11-19T04:57:24Z",
+  "items": [
+    {
+      "task_id": "feat-03-01-prompt-instalacao",
+      "title": "feat-03-01-prompt-instalacao — Script de requisitos e prompt de instalação para a IA",
+      "spec_path": "sdd/discovery/03-prompt-instalacao/features/feat-03-01-prompt-instalacao.md",
+      "status": "review_pending",
+      "rules": [
+        "VOZ-10",
+        "VOZ-01",
+        "VOZ-02",
+        "VOZ-09",
+        "TST-04",
+        "FLX-07",
+        "ARQ-04",
+        "ARQ-06",
+        "SEG-01"
+      ],
+      "skills_used": [],
+      "attempts": 1
+    }
+  ]
+}

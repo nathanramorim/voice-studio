@@ -38,6 +38,12 @@ Funciona como plugin do **Claude Code**, com instruções prontas também para *
 
 ## Requisitos
 
+> **Cole isto na sua IA antes de instalar:**
+>
+> "Verifique os requisitos do voice-studio: se não tiver o `uv`, instale com `brew install uv` (ou `curl -LsSf https://astral.sh/uv/install.sh | sh`). Depois rode `uv run https://raw.githubusercontent.com/nathanramorim/voice-studio/main/scripts/requisitos.py checar`. Se faltar algo, me mostre a lista e, com o meu ok, rode `uv run https://raw.githubusercontent.com/nathanramorim/voice-studio/main/scripts/requisitos.py instalar` para cada item. Não aceite licenças nem declarações por mim. Depois instale o plugin com `claude plugin marketplace add nathanramorim/voice-studio` e `claude plugin install voice-studio@voice-studio`."
+
+O script de requisitos só usa a biblioteca padrão do Python, então roda antes do clone (o repositório é público, não precisa de acesso). Com o repositório clonado, o mesmo vale como `uv run scripts/requisitos.py checar` (ou `--json`) e `uv run scripts/requisitos.py instalar` (pergunta antes de cada item; `--sim` roda sem perguntar). Ele nunca aceita a licença do XTTS (`--accept-cpml`) nem declara que a voz é sua (`--confirm-own-voice`): isso é sempre com você.
+
 | Ponto | O que precisa |
 |---|---|
 | **Onde roda** | Testado no **macOS com Apple Silicon** (CPU, sem GPU). Linux e Windows não foram testados. Agentes: Claude Code (plugin), agy e Codex (instruções prontas, ainda não validados); sem agente, a linha de comando funciona sozinha. No Apple Silicon, rode o `uv` com `--python cpython-3.11-macos-aarch64-none`: sem isso ele pode escolher um Python x86_64 (Rosetta) e o PyTorch não instala. |
@@ -125,7 +131,8 @@ Os pesos do modelo **não** estão neste repositório: são baixados na primeira
 
 | Versão | Novidades |
 |---|---|
-| **0.2.0** (em preparação, branch `feat/01-voz-multilingue-e-sotaque`) | Perfis de voz com consentimento registrado, vocabulário de pronúncia por idioma, catálogo de 6 idiomas (`pt` e `en` validados), comandos `falar` e `traduzir`, entrada e saída de áudio ou vídeo, proteção contra sobrescrever a entrada (`--sobrescrever`), skill única com adaptadores para Claude Code, agy e Codex. Falta o QA manual com voz real. |
+| **0.2.1** | Requisitos conferidos e instalados por script: `scripts/requisitos.py checar` (tabela ou `--json`) e `instalar` (pergunta antes de cada item; `--sim` roda sem perguntar), e o prompt "Cole isto na sua IA antes de instalar" no README. Nunca aceita licença nem declaração por você. |
+| **0.2.0** | Perfis de voz com consentimento registrado, vocabulário de pronúncia por idioma, catálogo de 6 idiomas (`pt` e `en` validados), comandos `falar` e `traduzir`, entrada e saída de áudio ou vídeo, proteção contra sobrescrever a entrada (`--sobrescrever`), skill única com adaptadores para Claude Code, agy e Codex. Falta o QA manual com voz real. |
 | **0.1.0** | Primeira versão: voz clonada local (XTTS-v2), narração com vocabulário de pronúncia, várias versões por fala com guarda de duração, dublagem por segmento, consentimento e aviso de licença, plugin com skill e os comandos `/clonar-voz` e `/dublar`. |
 
 ## Status e limites
@@ -145,7 +152,7 @@ uv run --python 3.11 --group dev pytest -q
 uv run --python 3.11 --group dev ruff check .
 ```
 
-O projeto segue o [Forge SDD](https://forge-sdd.org): regras em `sdd/memory/constitution.md` (IDs `VOZ-01` a `VOZ-09`) e decisões em `sdd/spec/adr/`. Para contribuir, leia o [`CONTRIBUTING.md`](CONTRIBUTING.md) e o [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md); para falhas de segurança ou de privacidade da voz, o [`SECURITY.md`](SECURITY.md).
+O projeto segue o [Forge SDD](https://forge-sdd.org): regras em `sdd/memory/constitution.md` (IDs `VOZ-01` a `VOZ-10`) e decisões em `sdd/spec/adr/`. Para contribuir, leia o [`CONTRIBUTING.md`](CONTRIBUTING.md) e o [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md); para falhas de segurança ou de privacidade da voz, o [`SECURITY.md`](SECURITY.md).
 
 ## Licença
 

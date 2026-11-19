@@ -6,7 +6,7 @@ Este repositório é o voice-studio: clona a voz do próprio usuário, 100% loca
 
 Fonte única da skill: `skills/voice-studio/SKILL.md` (e `skills/voice-studio/references/`). Antes de qualquer tarefa de voz (clonar, narrar, dublar, corrigir pronúncia), leia a skill. A CLI é o contrato comum a todos os agentes: `uv run --python 3.11 --extra xtts voice-studio <comando>` em `engine/` (Apple Silicon: `--python cpython-3.11-macos-aarch64-none`).
 
-## Regras do projeto (resumo; texto completo em `sdd/memory/constitution.md`, IDs `VOZ-01` a `VOZ-09`)
+## Regras do projeto (resumo; texto completo em `sdd/memory/constitution.md`, IDs `VOZ-01` a `VOZ-10`)
 
 - Só clone a voz do próprio usuário ou de quem autorizou. Pergunte uma vez; nunca passe `--confirm-own-voice` por conta própria.
 - O modelo XTTS-v2 é CPML (uso não comercial): o usuário aceita explicitamente (`--accept-cpml`). Nunca distribua pesos.

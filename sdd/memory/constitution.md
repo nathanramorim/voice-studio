@@ -139,4 +139,5 @@ Regras específicas deste projeto, invioláveis como os demais IDs. O como cumpr
 - **VOZ-07 Honestidade sobre sotaque e pronúncia:** o sotaque vem da amostra de referência e do vocabulário; não se promete sotaque que o motor não tem. A transcrição automática não prova pronúncia (ela normaliza marcas): um humano ouve e aprova.
 - **VOZ-08 Multiagente sem duplicar:** um único corpo de skill (`skills/voice-studio/`) com adaptadores finos para Claude Code (plugin), agy/Gemini (`GEMINI.md`) e Codex (`AGENTS.md`); a mesma CLI para todos (`DUP-10`).
 - **VOZ-09 Motor injetável:** o sintetizador entra por injeção; a suíte de testes nunca baixa modelo nem depende de rede (`TST-04`).
+- **VOZ-10 Fácil de usar, com prompt que usa script:** todo desenvolvimento considera a facilidade de uso e um prompt para a IA. Não vale qualquer prompt: o que dá para fazer de forma determinística vira script, e o prompt usa o script como ferramenta (ex.: `scripts/requisitos.py checar` e `instalar`). O script nunca aceita licença nem declaração pelo usuário.
 

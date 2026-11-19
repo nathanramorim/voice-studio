@@ -1,6 +1,6 @@
 # Contribuindo com o voice-studio
 
-Obrigado por querer ajudar! Este projeto clona a voz de quem usa, então algumas regras de privacidade e consentimento valem mais do que qualquer funcionalidade. Elas estão na [Constitution](sdd/memory/constitution.md) (IDs `VOZ-01` a `VOZ-09`).
+Obrigado por querer ajudar! Este projeto clona a voz de quem usa, então algumas regras de privacidade e consentimento valem mais do que qualquer funcionalidade. Elas estão na [Constitution](sdd/memory/constitution.md) (IDs `VOZ-01` a `VOZ-10`).
 
 ## Antes de tudo
 
