@@ -2,7 +2,7 @@
   "feature_id": "feat-03",
   "branch": "feat/03-prompt-instalacao",
   "spec_status": "reviewed",
-  "updated_at": "2026-11-19T09:49:34Z",
+  "updated_at": "2026-11-19T09:54:20Z",
   "items": [
     {
       "task_id": "feat-03-01-prompt-instalacao",
@@ -32,7 +32,7 @@
       "task_id": "feat-03-02-motor-multiplataforma",
       "title": "feat-03-02-motor-multiplataforma — Requisitos pelo motor multiplataforma (Linux, Windows e macOS)",
       "spec_path": "sdd/discovery/03-prompt-instalacao/features/feat-03-02-motor-multiplataforma.md",
-      "status": "review_pending",
+      "status": "approved",
       "rules": [
         "VOZ-10",
         "VOZ-01",
@@ -47,43 +47,9 @@
       "skills_used": [],
       "attempts": 1,
       "governance_verdict": {
-        "veredito": "duvida",
-        "achados": [
-          {
-            "verificacao": "S-05",
-            "regra": "VOZ-10",
-            "classificacao": "duvida",
-            "severidade": "baixa",
-            "arquivo": "skills/voice-studio/SKILL.md",
-            "linha": 20,
-            "evidencia": "ele confere o uv (e só o instala com o ok do usuário)",
-            "explicacao": "O achado 1 da r1 está resolvido quando o uv já existe. Ele volta quando o uv falta: o bootstrap vendorizado sai com código 4 e sugere `rode: sh .../scripts/bootstrap.sh --sim`. Essa sugestão descarta o `--arquivo` e o `checar` que a skill passou. Reproduzi em /tmp/vsrev2/outro com PATH=/usr/bin:/bin e stdin fechado: rc=4, e a dica saiu sem `--arquivo`. Se a IA seguir essa dica, volta a ler o requisitos.toml da pasta atual. O bootstrap.ps1 tem a mesma dica (`-Sim` sem os demais argumentos, linha 48).",
-            "correcao": "No passo 0, dizer que, com o ok do usuário para instalar o uv, a IA roda `sh RAIZ/scripts/bootstrap.sh --sim --arquivo RAIZ/requisitos.toml checar` (no Windows, `-Sim`), com `--sim` como primeiro argumento, e não a dica que o script imprime."
-          },
-          {
-            "verificacao": "S-02",
-            "regra": "DUP-02",
-            "classificacao": "duvida",
-            "severidade": "baixa",
-            "arquivo": "sdd/discovery/03-prompt-instalacao/features/feat-03-02-motor-multiplataforma.md",
-            "linha": 16,
-            "evidencia": "| Receita do voice-studio | piloto do motor | 17 itens | reusar e corrigir |",
-            "explicacao": "O piloto `exemplos/voice-studio/requisitos.toml` em 5f63e02 tem 15 itens (`git show` + `grep '^id ='`). O requisitos.toml entregue tem 16, porque acrescenta o `runtime-vc`. A contagem e a justificativa da linha não batem com a origem: o item novo é o runtime do Visual C++, e a linha não o cita.",
-            "correcao": "Corrigir a linha para 15 itens e citar o acréscimo do `runtime-vc` na justificativa."
-          },
-          {
-            "verificacao": "S-05",
-            "regra": "FLX-03",
-            "classificacao": "duvida",
-            "severidade": "baixa",
-            "arquivo": "PR #5 (corpo, fora do diff)",
-            "linha": 1,
-            "evidencia": "- [x] Processos externos com lista de argumentos, sem shell (`SEG-03`).",
-            "explicacao": "O corpo do PR já segue o template e descreve a 0.3.0 (achado 2 da r1 resolvido). Mas o item do checklist perdeu a parte do template 'entradas validadas na borda (`SEG-01`)', e o `SEG-01` é uma das regras da spec. O 'Como testar' também não traz a linha `forge gate` do template.",
-            "correcao": "Restaurar no checklist o trecho do `SEG-01` e incluir a linha do `forge gate` em 'Como testar'."
-          }
-        ],
-        "resumo": "Rodada 2: Camada A verde (validar, checar --json, pytest 91, ruff, sha256 = skills.lock = 5f63e02, prompt literal, verificador ok, CI verde nos 3 sistemas no HEAD 4cb9dab, forge gate 0 sobre git archive; P-13 só em engine/.venv não versionado). Achado 2 da r1 resolvido; achado 1 resolvido com uv presente. Três dúvidas baixas, não bloqueantes: dica --sim do bootstrap sem --arquivo quando falta o uv; contagem do piloto (15, não 17); checklist do PR sem SEG-01 e sem a linha do forge gate."
+        "veredito": "conforme",
+        "achados": [],
+        "resumo": "Rodada 3, HEAD 782c0e5. Camada A toda verde: validar 0 (16 requisitos, 3 sistemas); checar --json 0 com JSON válido; pytest 91 e ruff ok; sha256 dos 3 arquivos = skills.lock = git show 5f63e02, .gitattributes -text; prompt literal no README, 0 'brew install uv' e 0 'install.sh | sh'; verificador do readme-studio (d60f02e) requisitos: ok; gh pr checks 5 verde em ubuntu, windows e macos (run 44499973016, 782c0e5); forge gate em bloqueio reprova só no P-13 falso positivo em engine/.venv não versionado e passa com rc 0 sobre git archive HEAD. Achados da r2 resolvidos (bootstrap --sim primeiro com --arquivo, piloto com 15 itens + runtime-vc, corpo do PR com SEG-01 e forge gate). Camada B sem regressões: particularidades por sistema cobertas, Homebrew nunca único caminho, versão 0.3.0 em todos os lugares, sem referência ao script antigo, sem dependência nova, CI nos 3 sistemas, README.antigo.md não versionado, sem tentativa de injeção."
       }
     }
   ]
