@@ -11,11 +11,11 @@ $UrlUv = 'https://astral.sh/uv/install.ps1'
 $Aqui = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Sim = $false
 $Oficial = $false
-$Resto = @()
-foreach ($a in $args) {
-    if ($a -eq '-Sim' -or $a -eq '--sim') { $Sim = $true }
-    elseif ($a -eq '-Oficial' -or $a -eq '--oficial') { $Oficial = $true }
-    else { $Resto += $a }
+$Resto = @($args)
+# Só as opções do começo são do bootstrap (como no bootstrap.sh); o resto vai inteiro para o motor.
+while ($Resto.Count -gt 0 -and ($Resto[0] -in @('-Sim', '--sim', '-Oficial', '--oficial'))) {
+    if ($Resto[0] -in @('-Sim', '--sim')) { $Sim = $true } else { $Oficial = $true }
+    $Resto = @($Resto | Select-Object -Skip 1)
 }
 if ($Resto.Count -eq 0) { $Resto = @('checar') }
 

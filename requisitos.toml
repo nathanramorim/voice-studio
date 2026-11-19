@@ -1,4 +1,4 @@
-# Requisitos do voice-studio. Motor vendorizado de nathanramorim/requisitos-para-ia@5f63e02 (skills.lock);
+# Requisitos do voice-studio. Motor vendorizado de nathanramorim/requisitos-para-ia@v0.1.0 (skills.lock);
 # contrato: sdd/spec/contrato-requisitos.md do motor. Partiu do piloto exemplos/voice-studio/requisitos.toml.
 # Conferido no código: o XTTS roda em CPU em todos os sistemas (synth.py: .to("cpu")), então CUDA e MPS não
 # são usados; o voice-studio não grava áudio (a amostra é um arquivo: sem permissão de microfone); o XTTS não
