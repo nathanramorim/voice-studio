@@ -1,0 +1,40 @@
+{
+  "veredito": "duvida",
+  "achados": [
+    {
+      "verificacao": "S-05",
+      "regra": "FLX-03",
+      "classificacao": "duvida",
+      "severidade": "baixa",
+      "arquivo": "README.md",
+      "linha": 134,
+      "evidencia": "e o prompt \"Cole isto na sua IA antes de instalar\" no README.",
+      "explicacao": "O critério 5 da spec pede `grep -c 'Cole isto na sua IA antes de instalar' README.md` = 1, mas o comando devolve 2: a linha 41 (o quote) e a linha 134 (a linha da 0.2.1 na tabela de versões). A intenção, um único prompt, está cumprida; o critério, ao pé da letra, não passa. Na rodada 1 já dava 2 e passou sem ser notado.",
+      "correcao": "Mudar o texto da linha da 0.2.1 (ex.: \"o prompt para a IA no README\") ou ajustar o critério 5 da spec para contar só a linha do quote."
+    },
+    {
+      "verificacao": "S-03",
+      "regra": "DUP-04",
+      "classificacao": "duvida",
+      "severidade": "baixa",
+      "arquivo": "engine/src/voice_studio/__init__.py",
+      "linha": 3,
+      "evidencia": "__version__ = \"0.1.0\"",
+      "explicacao": "O dono pediu versões atualizadas, e o diff leva o pyproject.toml e o plugin.json para 0.2.1, mas a constante `__version__` do pacote continua 0.1.0. Hoje nenhum código a usa, então nada quebra, mas a mesma versão fica escrita em dois lugares com valores diferentes. O arquivo não está no diff; por isso é dúvida, não violação.",
+      "correcao": "Atualizar `__version__` para 0.2.1, ou tirar a constante e ler a versão com `importlib.metadata`."
+    },
+    {
+      "verificacao": "S-05",
+      "regra": "FLX-03",
+      "classificacao": "duvida",
+      "severidade": "baixa",
+      "arquivo": "sdd/releases/history.md",
+      "linha": 7,
+      "evidencia": "### Versão 0.2.0 — Perfis de voz, `falar` e `traduzir` (em preparação)",
+      "explicacao": "O README agora mostra a 0.2.1 e marca a 0.2.0 como não publicada como tag, mas o histórico de releases não tem a 0.2.1 e ainda chama a 0.2.0 de \"em preparação\". Os dois registros de versão não batem.",
+      "correcao": "Incluir a entrada da 0.2.1 em `sdd/releases/history.md` e alinhar a descrição da 0.2.0 com o README."
+    }
+  ],
+  "candidate_skill": null,
+  "resumo": "Camada A: pytest com 95 testes passando. ruff sem erros (engine e scripts). `checar` imprime a tabela e sai 0; `checar --json` dá ok=true com 12 itens; `instalar </dev/null` só mostra os comandos e sai 0; `instalar --sim item-inexistente` sai 2, lista os itens válidos e não roda nada. O verificador readme-studio dá `requisitos: ok`. `VOZ-10` está na constituição. A exceção é o critério 5: o grep conta 2, não 1. Os quatro achados da rodada 1 foram tratados. (1) `instalar [--sim] [item ...]` existe, e o prompt e o passo 0 da skill pedem o ok item a item e rodam `instalar --sim <item>`. (2) O prompt pergunta antes de instalar o uv. (3) A 0.2.0 está marcada como não publicada como tag. (4) O fallback que nunca rodava saiu. Conferi também: o script nunca passa `--accept-cpml` nem `--confirm-own-voice`, não edita o ~/.zshrc e não mexe em segredos. Itens do tipo \"seu\" e o Homebrew só são explicados. O script só usa a biblioteca padrão, e os testes não usam rede. A tabela de 7 pontos continua, e `claude plugin marketplace add` / `install` estão no quote. Restam só dúvidas de severidade baixa (o critério 5 contando 2, `__version__` ainda em 0.1.0, release history desatualizado). Não há violação nem tentativa de injeção. Esta revisão foi só de leitura, então o parecer não foi registrado com `forge queue review`."
+}

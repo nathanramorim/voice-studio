@@ -131,7 +131,7 @@ Os pesos do modelo **não** estão neste repositório: são baixados na primeira
 
 | Versão | Novidades |
 |---|---|
-| **0.2.1** | Requisitos conferidos e instalados por script: `scripts/requisitos.py checar` (tabela ou `--json`) e `instalar [--sim] [item ...]` (só os itens citados, ou tudo o que falta; pergunta antes de cada item; `--sim` roda sem perguntar), e o prompt "Cole isto na sua IA antes de instalar" no README. Nunca aceita licença nem declaração por você. |
+| **0.2.1** | Requisitos conferidos e instalados por script: `scripts/requisitos.py checar` (tabela ou `--json`) e `instalar [--sim] [item ...]` (só os itens citados, ou tudo o que falta; pergunta antes de cada item; `--sim` roda sem perguntar), e um prompt pronto para colar na sua IA, dentro de Requisitos. Nunca aceita licença nem declaração por você. |
 | **0.2.0** (não publicada como tag) | Perfis de voz com consentimento registrado, vocabulário de pronúncia por idioma, catálogo de 6 idiomas (`pt` e `en` validados), comandos `falar` e `traduzir`, entrada e saída de áudio ou vídeo, proteção contra sobrescrever a entrada (`--sobrescrever`), skill única com adaptadores para Claude Code, agy e Codex. Falta o QA manual com voz real. |
 | **0.1.0** | Primeira versão: voz clonada local (XTTS-v2), narração com vocabulário de pronúncia, várias versões por fala com guarda de duração, dublagem por segmento, consentimento e aviso de licença, plugin com skill e os comandos `/clonar-voz` e `/dublar`. |
 
