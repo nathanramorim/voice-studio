@@ -46,13 +46,13 @@ descricao = "Python 3.11 exigido pelo motor (>=3.11,<3.12), instalado pelo uv"
 tipo = "programa"
 obrigatorio = true
 depende_de = ["uv"]
-checar = { comando = ["uv", "python", "find", "3.11"], regex = "3\\.11" }
+checar = { comando = ["uv", "python", "find", "--system", "3.11"], regex = "3\\.11" }
   [[requisito.receita]]
   quando = { sistema = "macos", rosetta = true }
   manual = "Este terminal roda em Rosetta (x86_64): abra um terminal nativo arm64, senão o PyTorch não instala."
   [[requisito.receita]]
   quando = { sistema = "macos", arch = "arm64" }
-  checar = { comando = ["uv", "python", "find", "cpython-3.11-macos-aarch64-none"], regex = "3\\.11" }
+  checar = { comando = ["uv", "python", "find", "--system", "cpython-3.11-macos-aarch64-none"], regex = "3\\.11" }
   comandos = [["uv", "python", "install", "cpython-3.11-macos-aarch64-none"]]
   nota = "No Apple Silicon use --python cpython-3.11-macos-aarch64-none (sem isso o uv pode pegar um Python x86_64)."
   [[requisito.receita]]
