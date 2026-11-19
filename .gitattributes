@@ -1,0 +1,5 @@
+# Motor de requisitos vendorizado (skills.lock): bytes exatos em qualquer sistema.
+scripts/requisitos.py -text
+scripts/bootstrap.sh -text
+scripts/bootstrap.ps1 -text
+requisitos.toml text eol=lf

@@ -1,0 +1,31 @@
+{
+  "versao": 1,
+  "skills": [
+    {
+      "nome": "requisitos-para-ia",
+      "repo": "nathanramorim/requisitos-para-ia",
+      "ref": "feat/0001-motor-multiplataforma",
+      "modo": "copia",
+      "destinos": [
+        {
+          "origem": "scripts/requisitos.py",
+          "destino": "scripts/requisitos.py"
+        },
+        {
+          "origem": "scripts/bootstrap.sh",
+          "destino": "scripts/bootstrap.sh"
+        },
+        {
+          "origem": "scripts/bootstrap.ps1",
+          "destino": "scripts/bootstrap.ps1"
+        }
+      ],
+      "commit": "5f63e02fdb266817e70d27d7073f2c7223db4f9c",
+      "arquivos": {
+        "scripts/requisitos.py": "4335b6305ecc335809b40662e0984ad3260ff633c92d929d377e111ef3626192",
+        "scripts/bootstrap.sh": "583897668b8046affcae501b02be6fa04313c614b5713be66aec3ff906baec5a",
+        "scripts/bootstrap.ps1": "8b3b4576fbebbaba6ea420fda27d77c57373563588aafa1fb4e7c5f5767235e2"
+      }
+    }
+  ]
+}

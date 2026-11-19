@@ -4,9 +4,27 @@ Este arquivo registra o histórico de entregas de produto deste projeto.
 
 ## Entregas
 
-### Versão 0.2.0 — Perfis de voz, `falar` e `traduzir` (em preparação)
+### Versão 0.3.0 — Requisitos em Linux, Windows e macOS pelo motor multiplataforma
 
-Iniciativa 01 (`feat/01-voz-multilingue-e-sotaque`). Falta o QA manual com voz real (feat-01-08, feito ouvindo).
+Iniciativa 03, task feat-03-02 (`feat/03-prompt-instalacao`, mesmo PR da 0.2.1).
+
+*   **Motor vendorizado:** `scripts/requisitos.py`, `scripts/bootstrap.sh` e `scripts/bootstrap.ps1` copiados de `nathanramorim/requisitos-para-ia@5f63e02` (origem e sha256 no `skills.lock`); o script próprio da 0.2.1 saiu.
+*   **`requisitos.toml`:** receita por sistema (macOS arm64 e Intel, Linux x64 e arm64 por gerenciador, Windows x64; Windows arm64 sem PyTorch, com a alternativa do WSL), sem Homebrew como pré-requisito; licença CPML, amostra e aprovação da voz continuam com a pessoa.
+*   **README:** o bloco para a IA é a saída de `requisitos.py prompt` (bootstrap por sistema, depois `instalar --sim <item>` com o ok de cada item); caminho com clone e sem clone.
+*   **CI:** `.github/workflows/requisitos.yml` em ubuntu, windows e macos (`validar`, `checar --json`, bootstrap sem uv e `instalar --dry-run`, testes leves).
+
+### Versão 0.2.1 — Requisitos por script e prompt de instalação para a IA (não publicada como tag)
+
+Iniciativa 03 (`feat/03-prompt-instalacao`).
+
+*   **`scripts/requisitos.py`** (só biblioteca padrão, roda antes do clone pela URL raw): `checar` (tabela ou `--json`, código 1 se faltar algo obrigatório) e `instalar [--sim] [item ...]` (só os itens citados ou tudo o que falta; pergunta antes de cada item; `--sim` roda sem perguntar; nome desconhecido sai 2).
+*   **Nunca aceita licença nem declaração** pelo usuário: `--accept-cpml` e `--confirm-own-voice` continuam com você; esses itens o script só explica.
+*   **README:** prompt "para colar na sua IA" dentro de Requisitos, antes da instalação; a IA pergunta antes do uv e pede o ok item por item.
+*   **Skill:** passo 0 de requisitos. **Constitution:** nova regra `VOZ-10` (o que é determinístico vira script e o prompt usa o script).
+
+### Versão 0.2.0 — Perfis de voz, `falar` e `traduzir` (não publicada como tag)
+
+Iniciativa 01 (`feat/01-voz-multilingue-e-sotaque`), já na `main`. Falta o QA manual com voz real (feat-01-08, feito ouvindo).
 
 *   **Perfis de voz:** `perfil criar|listar|mostrar|vocab`. O perfil guarda a amostra normalizada, o consentimento (data e confirmação do usuário) e o vocabulário de pronúncia por idioma, em `~/.voice-studio/perfis/<nome>/`, sempre fora de repositórios git (ADR-0002).
 *   **Catálogo único de idiomas:** `pt`, `en`, `es`, `fr`, `de` e `it`. Só `pt` e `en` foram medidos com falas reais; os demais saem `validated: false` e a CLI avisa. A guarda de duração consulta o catálogo.

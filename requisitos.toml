@@ -1,0 +1,326 @@
+# Requisitos do voice-studio. Motor vendorizado de nathanramorim/requisitos-para-ia@5f63e02 (skills.lock);
+# contrato: sdd/spec/contrato-requisitos.md do motor. Partiu do piloto exemplos/voice-studio/requisitos.toml.
+# Conferido no código: o XTTS roda em CPU em todos os sistemas (synth.py: .to("cpu")), então CUDA e MPS não
+# são usados; o voice-studio não grava áudio (a amostra é um arquivo: sem permissão de microfone); o XTTS não
+# usa espeak nem phonemizer. Fatos conferidos em 2026-11-19: wheels do extra xtts (uv pip compile --only-binary) existem para
+# win_amd64, manylinux x86_64 e macOS arm64; Linux arm64 e Mac Intel compilam monotonic-alignment-search
+# (precisam de compilador C); o Mac Intel cai no torch 2.2.2; o PyTorch não tem wheel para Windows arm64.
+versao = 1
+
+[projeto]
+nome = "voice-studio"
+script = "scripts/requisitos.py"
+repo = "nathanramorim/voice-studio"
+
+[[requisito]]
+id = "uv"
+descricao = "Gerencia o Python e as dependências (você não usa pip)"
+tipo = "programa"
+obrigatorio = true
+checar = { comando = ["uv", "--version"], versao_minima = "0.5", procurar_em = ["{home}/.local/bin", "{home}/.cargo/bin"] }
+  [[requisito.receita]]
+  quando = { sistema = "macos", gerenciador = "brew" }
+  comandos = [["brew", "install", "uv"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", gerenciador = "pacman" }
+  comandos = [["pacman", "-S", "uv"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", gerenciador = "dnf" }
+  comandos = [["dnf", "install", "uv"]]
+  [[requisito.receita]]
+  quando = { sistema = "windows", gerenciador = "winget" }
+  comandos = [["winget", "install", "--id", "astral-sh.uv", "-e"]]
+  [[requisito.receita]]
+  quando = { sistema = "windows", gerenciador = "scoop" }
+  comandos = [["scoop", "install", "uv"]]
+  [[requisito.receita]]
+  quando = { sistema = "windows" }
+  manual = "Rode powershell -ExecutionPolicy Bypass -File scripts/bootstrap.ps1: ele instala o uv pelo instalador oficial (sem administrador) com o seu ok."
+  [[requisito.receita]]
+  manual = "Rode sh scripts/bootstrap.sh: ele mostra o instalador oficial do uv (https://astral.sh/uv/install.sh, sem sudo) e só instala com o seu ok."
+  path = ["{home}/.local/bin"]
+
+[[requisito]]
+id = "python-3-11"
+descricao = "Python 3.11 exigido pelo motor (>=3.11,<3.12), instalado pelo uv"
+tipo = "programa"
+obrigatorio = true
+depende_de = ["uv"]
+checar = { comando = ["uv", "python", "find", "--system", "3.11"], regex = "3\\.11" }
+  [[requisito.receita]]
+  quando = { sistema = "macos", rosetta = true }
+  manual = "Este terminal roda em Rosetta (x86_64): abra um terminal nativo arm64, senão o PyTorch não instala."
+  [[requisito.receita]]
+  quando = { sistema = "macos", arch = "arm64" }
+  checar = { comando = ["uv", "python", "find", "--system", "cpython-3.11-macos-aarch64-none"], regex = "3\\.11" }
+  comandos = [["uv", "python", "install", "cpython-3.11-macos-aarch64-none"]]
+  nota = "No Apple Silicon use --python cpython-3.11-macos-aarch64-none (sem isso o uv pode pegar um Python x86_64)."
+  [[requisito.receita]]
+  comandos = [["uv", "python", "install", "3.11"]]
+
+[[requisito]]
+id = "ffmpeg"
+descricao = "Lê e grava áudio e vídeo"
+tipo = "programa"
+obrigatorio = true
+tamanho = "80 MB"
+checar = { comando = ["ffmpeg", "-version"], versao_regex = "ffmpeg version n?(\\d+\\.\\d+)" }
+  [[requisito.receita]]
+  quando = { sistema = "macos", gerenciador = "brew" }
+  comandos = [["brew", "install", "ffmpeg"]]
+  [[requisito.receita]]
+  quando = { sistema = "macos", gerenciador = "port" }
+  comandos = [["port", "install", "ffmpeg"]]
+  admin = true
+  [[requisito.receita]]
+  quando = { sistema = "macos" }
+  manual = "Sem Homebrew nem MacPorts: baixe um ffmpeg estático para macOS (links em https://ffmpeg.org/download.html, seção macOS), traga o ffmpeg e o ffprobe e ponha a pasta no PATH. Ou instale o MacPorts (https://www.macports.org) ou o Homebrew (https://brew.sh) e use o pacote ffmpeg."
+  [[requisito.receita]]
+  quando = { sistema = "linux", gerenciador = "apt" }
+  comandos = [["apt-get", "install", "ffmpeg"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", gerenciador = "dnf" }
+  comandos = [["dnf", "install", "ffmpeg-free"]]
+  nota = "ffmpeg-free tem menos codecs; o completo vem do RPM Fusion."
+  [[requisito.receita]]
+  quando = { sistema = "linux", gerenciador = "pacman" }
+  comandos = [["pacman", "-S", "ffmpeg"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", gerenciador = "zypper" }
+  comandos = [["zypper", "install", "ffmpeg"]]
+  nota = "Tumbleweed; no Leap 15.6 só há ffmpeg-4."
+  [[requisito.receita]]
+  quando = { sistema = "linux" }
+  manual = "Instale o ffmpeg pelo gerenciador da sua distro."
+  [[requisito.receita]]
+  quando = { sistema = "windows", gerenciador = "winget" }
+  comandos = [["winget", "install", "--id", "Gyan.FFmpeg", "-e"]]
+  nota = "O winget pergunta o aceite dos termos a você. Abra outro terminal depois."
+  [[requisito.receita]]
+  quando = { sistema = "windows", gerenciador = "scoop" }
+  comandos = [["scoop", "install", "ffmpeg"]]
+  [[requisito.receita]]
+  quando = { sistema = "windows", gerenciador = "choco" }
+  comandos = [["choco", "install", "ffmpeg"]]
+  [[requisito.receita]]
+  quando = { sistema = "windows" }
+  manual = "Instale o winget (App Installer da Microsoft Store) e rode: winget install --id Gyan.FFmpeg -e"
+
+[[requisito]]
+id = "ffprobe"
+descricao = "Mede a duração do áudio (vem no pacote ffmpeg)"
+tipo = "programa"
+obrigatorio = true
+depende_de = ["ffmpeg"]
+checar = { comando = ["ffprobe", "-version"], versao_regex = "ffprobe version n?(\\d+\\.\\d+)" }
+  [[requisito.receita]]
+  manual = "Vem junto com o ffmpeg; se faltar, reinstale o ffmpeg e abra outro terminal."
+
+[[requisito]]
+id = "whisper-cli"
+descricao = "Transcreve (só para traduzir e transcribe)"
+tipo = "programa"
+obrigatorio = false
+checar = { comando = ["whisper-cli", "--version"], versao_regex = "version: (\\d+\\.\\d+(?:\\.\\d+)?)" }
+  [[requisito.receita]]
+  quando = { sistema = "macos", gerenciador = "brew" }
+  comandos = [["brew", "install", "whisper.cpp"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", gerenciador = "pacman" }
+  comandos = [["pacman", "-S", "whisper-cpp"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux" }
+  manual = "Ubuntu 26.04+ e Debian sid: sudo apt-get install whisper.cpp. Nas outras distros (Ubuntu 24.04, Debian 12/13, Fedora, openSUSE) não há pacote com whisper-cli: compile de https://github.com/ggml-org/whisper.cpp (cmake -B build && cmake --build build) e ponha build/bin no PATH."
+  [[requisito.receita]]
+  quando = { sistema = "windows", gerenciador = "scoop" }
+  comandos = [["scoop", "install", "whisper-cpp"]]
+  [[requisito.receita]]
+  quando = { sistema = "windows", gerenciador = "choco" }
+  comandos = [["choco", "install", "whisper-cpp"]]
+  [[requisito.receita]]
+  quando = { sistema = "windows" }
+  manual = "Baixe whisper-bin-x64.zip do release bNNNN em https://github.com/ggml-org/whisper.cpp/releases, extraia e ponha a pasta no PATH (não há pacote no winget)."
+  [[requisito.receita]]
+  quando = { sistema = "macos" }
+  manual = "Sem Homebrew: compile de https://github.com/ggml-org/whisper.cpp (precisa do cmake e das Command Line Tools da Apple, que você instala com xcode-select --install): cmake -B build && cmake --build build --config Release, e ponha build/bin no PATH. Com Homebrew: brew install whisper.cpp."
+
+[[requisito]]
+id = "modelo-whisper"
+descricao = "Modelo ggml-small do Whisper (só para transcrever)"
+tipo = "download"
+obrigatorio = false
+depende_de = ["whisper-cli"]
+tamanho = "466 MB"
+cache = "{home}/.cache/whisper"
+checar = { arquivo = ["{env:VOICE_STUDIO_WHISPER_MODEL}", "{home}/.cache/whisper/ggml-small.bin"] }
+  [[requisito.receita]]
+  baixar = { url = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin", destino = "{home}/.cache/whisper/ggml-small.bin" }
+
+[[requisito]]
+id = "variavel-modelo-whisper"
+descricao = "Diz ao voice-studio onde está o modelo do Whisper (ou use --model)"
+tipo = "variavel"
+obrigatorio = false
+depende_de = ["modelo-whisper"]
+variavel = { nome = "VOICE_STUDIO_WHISPER_MODEL", valor = "{home}/.cache/whisper/ggml-small.bin" }
+checar = { env = "VOICE_STUDIO_WHISPER_MODEL" }
+  [[requisito.receita]]
+  manual = "Definir a variável é com você (o motor não edita o seu perfil do shell)."
+
+[[requisito]]
+id = "libsndfile"
+descricao = "Biblioteca de áudio do sistema (recomendada pelo coqui-tts no Linux)"
+tipo = "biblioteca"
+obrigatorio = false
+checar = { arquivo = ["/usr/lib/x86_64-linux-gnu/libsndfile.so*", "/usr/lib/aarch64-linux-gnu/libsndfile.so*", "/usr/lib64/libsndfile.so*", "/usr/lib/libsndfile.so*"] }
+  [[requisito.receita]]
+  quando = { sistema = "linux", gerenciador = "apt" }
+  comandos = [["apt-get", "install", "libsndfile1"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", gerenciador = "dnf" }
+  comandos = [["dnf", "install", "libsndfile"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", gerenciador = "pacman" }
+  comandos = [["pacman", "-S", "libsndfile"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", gerenciador = "zypper" }
+  comandos = [["zypper", "install", "libsndfile1"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux" }
+  manual = "Instale a libsndfile pelo gerenciador da sua distro."
+  [[requisito.receita]]
+  quando = { sistema = "macos" }
+  dispensado = "No macOS o pacote soundfile já traz a biblioteca."
+  [[requisito.receita]]
+  quando = { sistema = "windows" }
+  dispensado = "No Windows o pacote soundfile já traz a biblioteca."
+
+[[requisito]]
+id = "compilador"
+descricao = "Compilador C (monotonic-alignment-search não tem wheel aqui)"
+tipo = "biblioteca"
+obrigatorio = false
+checar = { comando = ["cc", "--version"] }
+  [[requisito.receita]]
+  quando = { sistema = "linux", arch = "arm64", gerenciador = "apt" }
+  comandos = [["apt-get", "install", "build-essential"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", arch = "arm64", gerenciador = "dnf" }
+  comandos = [["dnf", "install", "gcc", "gcc-c++"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", arch = "arm64", gerenciador = "pacman" }
+  comandos = [["pacman", "-S", "base-devel"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", arch = "arm64", gerenciador = "zypper" }
+  comandos = [["zypper", "install", "gcc", "gcc-c++"]]
+  [[requisito.receita]]
+  quando = { sistema = "linux", arch = "arm64" }
+  manual = "Instale o gcc (compilador C e C++) pelo gerenciador da sua distro."
+  [[requisito.receita]]
+  quando = { sistema = "macos", arch = "x64", rosetta = false }
+  checar = { comando = ["xcode-select", "-p"] }
+  manual = "Rode você: xcode-select --install (a licença das ferramentas da Apple é aceita por você)."
+  [[requisito.receita]]
+  dispensado = "Aqui o extra xtts tem wheel pronta; não precisa compilar."
+
+[[requisito]]
+id = "runtime-vc"
+descricao = "Runtime do Visual C++ (o PyTorch no Windows precisa dele)"
+tipo = "biblioteca"
+obrigatorio = false
+checar = { arquivo = ["{env:SystemRoot}/System32/vcruntime140_1.dll", "C:/Windows/System32/vcruntime140_1.dll"] }
+  [[requisito.receita]]
+  quando = { sistema = "windows", arch = "arm64" }
+  dispensado = "Sem PyTorch no Windows arm64 (veja motor-xtts)."
+  [[requisito.receita]]
+  quando = { sistema = "windows", gerenciador = "winget" }
+  comandos = [["winget", "install", "--id", "Microsoft.VCRedist.2015+.x64", "-e"]]
+  nota = "O winget pergunta o aceite dos termos a você."
+  [[requisito.receita]]
+  quando = { sistema = "windows" }
+  manual = "Baixe e rode você o instalador da Microsoft: https://aka.ms/vs/17/release/vc_redist.x64.exe"
+  [[requisito.receita]]
+  dispensado = "Só o Windows precisa."
+
+[[requisito]]
+id = "motor-xtts"
+descricao = "Ambiente do motor de voz com o extra xtts (coqui-tts e PyTorch; roda em CPU, sem GPU)"
+tipo = "pacote-python"
+obrigatorio = false
+depende_de = ["uv", "python-3-11", "libsndfile", "compilador", "runtime-vc"]
+tamanho = "1 GB (Linux x64: cerca de 3 GB, o torch do PyPI traz CUDA)"
+nota = "Roda em CPU em todos os sistemas: a GPU (CUDA ou MPS) não é usada, mesmo que exista. Cada fala leva de 20 a 60 s."
+  [[requisito.receita]]
+  quando = { sistema = "windows", arch = "arm64" }
+  nao_suportado = "O PyTorch não publica wheel para Windows arm64: use o WSL (Ubuntu) ou uma máquina x64."
+  [[requisito.receita]]
+  quando = { sistema = "macos", arch = "arm64", rosetta = false }
+  checar = { arquivo = ["{raiz}/engine/.venv/lib/python3.11/site-packages/TTS", "{env:UV_PROJECT_ENVIRONMENT}/lib/python3.11/site-packages/TTS"] }
+  comandos = [["uv", "sync", "--project", "{raiz}/engine", "--python", "cpython-3.11-macos-aarch64-none", "--extra", "xtts"]]
+  nota = "Sistema testado. O uv também cria sozinho no primeiro uv run --extra xtts."
+  [[requisito.receita]]
+  quando = { sistema = "macos" }
+  checar = { arquivo = ["{raiz}/engine/.venv/lib/python3.11/site-packages/TTS", "{env:UV_PROJECT_ENVIRONMENT}/lib/python3.11/site-packages/TTS"] }
+  comandos = [["uv", "sync", "--project", "{raiz}/engine", "--python", "3.11", "--extra", "xtts"]]
+  nota = "Mac Intel: cai no torch 2.2.2 (último para x86_64) e compila uma dependência; não testado."
+  [[requisito.receita]]
+  quando = { sistema = "linux" }
+  checar = { arquivo = ["{raiz}/engine/.venv/lib/python3.11/site-packages/TTS", "{env:UV_PROJECT_ENVIRONMENT}/lib/python3.11/site-packages/TTS"] }
+  comandos = [["uv", "sync", "--project", "{raiz}/engine", "--python", "3.11", "--extra", "xtts"]]
+  nota = "Wheels conferidas para x86_64; arm64 compila uma dependência. Não testado no Linux."
+  [[requisito.receita]]
+  quando = { sistema = "windows" }
+  checar = { arquivo = ["{raiz}/engine/.venv/Lib/site-packages/TTS", "{env:UV_PROJECT_ENVIRONMENT}/Lib/site-packages/TTS"] }
+  comandos = [["uv", "sync", "--project", "{raiz}/engine", "--python", "3.11", "--extra", "xtts"]]
+  nota = "Wheels conferidas para win_amd64 (sem Build Tools). Não testado no Windows."
+
+[[requisito]]
+id = "licenca-xtts"
+descricao = "Aceite da licença Coqui CPML (só uso não comercial); o modelo XTTS-v2 baixa depois disso"
+tipo = "pessoa"
+obrigatorio = false
+depende_de = ["motor-xtts"]
+tamanho = "1,8 GB"
+checar = { arquivo = ["{env:TTS_HOME}/tts/tts_models--multilingual--multi-dataset--xtts_v2", "{dados}/tts/tts_models--multilingual--multi-dataset--xtts_v2"] }
+  [[requisito.receita]]
+  quando = { sistema = "windows" }
+  checar = { arquivo = ["{env:TTS_HOME}/tts/tts_models--multilingual--multi-dataset--xtts_v2", "{cache}/tts/tts_models--multilingual--multi-dataset--xtts_v2"] }
+  manual = "Leia a licença CPML (https://coqui.ai/cpml) e, se concordar, aceite VOCÊ com --accept-cpml na primeira fala. Ninguém aceita por você."
+  [[requisito.receita]]
+  manual = "Leia a licença CPML (https://coqui.ai/cpml) e, se concordar, aceite VOCÊ com --accept-cpml na primeira fala. Ninguém aceita por você."
+
+[[requisito]]
+id = "amostra-e-consentimento"
+descricao = "Uma gravação sua (6 a 30 s) e a declaração de que a voz é sua ou autorizada"
+tipo = "pessoa"
+obrigatorio = false
+checar = { arquivo = ["{env:VOICE_STUDIO_HOME}/*/perfil.json", "{home}/.voice-studio/perfis/*/perfil.json"] }
+  [[requisito.receita]]
+  manual = "Grave 6 a 30 s de fala contínua, sem música, no app de gravação do seu sistema (é ele que pede a permissão do microfone; o voice-studio não grava) e crie o perfil: voice-studio perfil criar <nome> <gravação> --confirm-own-voice. A declaração é sua; a IA nunca preenche."
+
+[[requisito]]
+id = "aprovar-voz"
+descricao = "Ouvir o primeiro teste e aprovar a voz antes de usar"
+tipo = "pessoa"
+obrigatorio = false
+depende_de = ["amostra-e-consentimento", "licenca-xtts"]
+  [[requisito.receita]]
+  manual = "Gere uma frase de teste, ouça e diga se aprova; só a pessoa aprova a própria voz."
+
+[[requisito]]
+id = "disco"
+descricao = "Espaço para o ambiente, o modelo XTTS e o Whisper"
+tipo = "maquina"
+obrigatorio = false
+checar = { disco_gb = 4 }
+  [[requisito.receita]]
+  manual = "Libere cerca de 4 GB (6 GB no Linux x64)."
+
+[[requisito]]
+id = "memoria"
+descricao = "Memória para o XTTS em CPU"
+tipo = "maquina"
+obrigatorio = false
+checar = { memoria_gb = 8 }
+  [[requisito.receita]]
+  manual = "Testado com 8 GB de RAM; com menos, feche outros programas ou espere mais por fala."

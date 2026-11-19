@@ -1,0 +1,6 @@
+{
+  "veredito": "conforme",
+  "achados": [],
+  "candidate_skill": null,
+  "resumo": "Rodada 3, HEAD 782c0e5. Camada A toda verde: validar 0 (16 requisitos, 3 sistemas); checar --json 0 com JSON válido; pytest 91 e ruff ok; sha256 dos 3 arquivos = skills.lock = git show 5f63e02, .gitattributes -text; prompt literal no README, 0 'brew install uv' e 0 'install.sh | sh'; verificador do readme-studio (d60f02e) requisitos: ok; gh pr checks 5 verde em ubuntu, windows e macos (run 44499973016, 782c0e5); forge gate em bloqueio reprova só no P-13 falso positivo em engine/.venv não versionado e passa com rc 0 sobre git archive HEAD. Achados da r2 resolvidos (bootstrap --sim primeiro com --arquivo, piloto com 15 itens + runtime-vc, corpo do PR com SEG-01 e forge gate). Camada B sem regressões: particularidades por sistema cobertas, Homebrew nunca único caminho, versão 0.3.0 em todos os lugares, sem referência ao script antigo, sem dependência nova, CI nos 3 sistemas, README.antigo.md não versionado, sem tentativa de injeção."
+}

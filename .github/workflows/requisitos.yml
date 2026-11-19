@@ -1,0 +1,66 @@
+# Requisitos nos 3 sistemas com o motor vendorizado (scripts/requisitos.py, skills.lock).
+# Falta de item pesado no runner (ffmpeg, whisper, motor de voz) não falha; falha se o motor quebrar
+# (sem JSON ou código >= 2), se a receita for inválida, se o bootstrap agir sem ok ou se os testes falharem.
+name: requisitos
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  requisitos:
+    name: requisitos (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: validar
+        run: uv run scripts/requisitos.py validar
+      - name: plataforma
+        run: uv run scripts/requisitos.py plataforma
+      - name: checar --json (falha só se o motor quebrar)
+        run: |
+          set +e
+          uv run scripts/requisitos.py checar --json > checar.json
+          codigo=$?
+          set -e
+          cat checar.json
+          uv run --no-project python -c "import json; d = json.load(open('checar.json', encoding='utf-8')); assert d['requisitos'], 'sem requisitos'"
+          test "$codigo" -le 1
+      - name: bootstrap sem uv e sem ok não instala nada (código 4)
+        if: runner.os != 'Windows'
+        run: |
+          set +e
+          env PATH=/usr/bin:/bin HOME="$RUNNER_TEMP/casa" sh scripts/bootstrap.sh </dev/null
+          test $? -eq 4
+      - name: bootstrap sem uv e sem ok não instala nada (código 4, Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $env:Path = "$env:SystemRoot\System32;$env:SystemRoot\System32\WindowsPowerShell\v1.0"
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap.ps1
+          if ($LASTEXITCODE -ne 4) { throw "esperava 4, veio $LASTEXITCODE" }
+          exit 0
+      - name: bootstrap com uv, instalar --dry-run (não roda nada)
+        if: runner.os != 'Windows'
+        run: sh scripts/bootstrap.sh instalar --dry-run
+      - name: bootstrap com uv, instalar --dry-run (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/bootstrap.ps1 instalar --dry-run
+          if ($LASTEXITCODE -ne 0) { throw "saiu com $LASTEXITCODE" }
+      - name: testes leves (requisitos)
+        working-directory: engine
+        run: uv run --python 3.11 --group dev pytest -q tests/test_requisitos.py
