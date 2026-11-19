@@ -13,7 +13,7 @@
 | Procurei | Onde | Achei | Decisão | Justificativa |
 |---|---|---|---|---|
 | Script de requisitos | `scripts/requisitos.py` (feat-03-01) | script próprio, só macOS com brew | substituir | O motor cobre os três sistemas com receita declarativa e trava contra agir pela pessoa. |
-| Receita do voice-studio | piloto do motor | 17 itens | reusar e corrigir | Base conferida; faltavam caminhos sem Homebrew e o compilador no Linux arm64 sem gerenciador conhecido. |
+| Receita do voice-studio | piloto do motor (`5f63e02`) | 15 itens | reusar, corrigir e acrescentar `runtime-vc` (16 itens) | Base conferida; faltavam caminhos sem Homebrew, o compilador no Linux arm64 sem gerenciador conhecido e o runtime do Visual C++ que o PyTorch pede no Windows. |
 | Dispositivo do XTTS | `synth.py` | `TTS(...).to("cpu")` fixo | documentar | CUDA e MPS nunca são usados; a receita diz isso em vez de inventar variante de GPU. |
 | Gravação de áudio | `engine/src`, `skills/`, `commands/` | nenhuma (a amostra é um arquivo) | sem item de permissão | O voice-studio não abre o microfone; o app de gravação do sistema é que pede. |
 | espeak | `TTS/tts/layers/xtts`, `TTS/tts/models/xtts.py` | sem `espeak` nem `phonemizer` | sem item | O XTTS usa tokenizador próprio. |
