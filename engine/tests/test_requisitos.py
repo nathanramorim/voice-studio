@@ -152,11 +152,40 @@ def test_readme_tem_o_prompt_para_a_ia_antes_da_instalacao():
 
 
 def test_instalar_so_os_itens_citados(tmp_path):
-    rodados = []
-    codigo = req.instalar(amb(tmp_path, tem=("brew", "uv")), sim=True, nomes=["whisper-cli"],
-                          rodar=lambda c: rodados.append(c) or 0, saida=lambda _: None)
+    tem, rodados = ["brew", "uv"], []
+
+    def rodar(c):
+        rodados.append(c)
+        tem.append("whisper-cli")  # simula a instalação
+        return 0
+
+    codigo = req.instalar(amb(tmp_path, tem=tem), sim=True, nomes=["whisper-cli"],
+                          rodar=rodar, saida=lambda _: None)
     assert rodados == [["brew", "install", "whisper-cpp"]]
     assert codigo == 0  # ffmpeg faltando não entra: não foi pedido
+
+
+def test_instalar_sai_1_se_o_item_pedido_continua_faltando(tmp_path):
+    codigo = req.instalar(amb(tmp_path, tem=("brew", "uv")), sim=True, nomes=["whisper-cli"],
+                          rodar=lambda c: 0, saida=lambda _: None)
+    assert codigo == 1
+
+
+def test_instalar_sai_1_se_um_comando_falha(tmp_path):
+    linhas = []
+    codigo = req.instalar(amb(tmp_path), sim=True, nomes=["modelo-whisper"],
+                          rodar=lambda c: 7, saida=linhas.append)
+    assert codigo == 1 and any("falhou (código 7)" in linha for linha in linhas)
+
+
+def test_instalar_sem_tty_aponta_para_o_item_e_nunca_para_tudo(tmp_path):
+    linhas = []
+    req.instalar(amb(tmp_path, tem=("brew", "uv")), interativo=False,
+                 rodar=pytest.fail, saida=linhas.append)
+    dicas = [linha for linha in linhas if "só mostrado" in linha]
+    assert dicas and all("instalar --sim " in d and "com o seu ok" in d for d in dicas)
+    assert any("instalar --sim ffmpeg" in d for d in dicas)
+    assert not any(d.rstrip(")").endswith("--sim`") or "rode de novo com --sim" in d for d in dicas)
 
 
 def test_instalar_item_desconhecido_sai_2_e_lista_os_validos(tmp_path):

@@ -2,7 +2,7 @@
   "feature_id": "feat-03",
   "branch": "feat/03-prompt-instalacao",
   "spec_status": "reviewed",
-  "updated_at": "2026-11-19T05:05:40Z",
+  "updated_at": "2026-11-19T05:09:37Z",
   "items": [
     {
       "task_id": "feat-03-01-prompt-instalacao",
@@ -27,39 +27,17 @@
         "achados": [
           {
             "verificacao": "S-05",
-            "regra": "FLX-03",
+            "regra": "VOZ-10",
             "classificacao": "duvida",
             "severidade": "baixa",
-            "arquivo": "README.md",
-            "linha": 134,
-            "evidencia": "e o prompt \"Cole isto na sua IA antes de instalar\" no README.",
-            "explicacao": "O critério 5 da spec pede `grep -c 'Cole isto na sua IA antes de instalar' README.md` = 1, mas o comando devolve 2: a linha 41 (o quote) e a linha 134 (a linha da 0.2.1 na tabela de versões). A intenção, um único prompt, está cumprida; o critério, ao pé da letra, não passa. Na rodada 1 já dava 2 e passou sem ser notado.",
-            "correcao": "Mudar o texto da linha da 0.2.1 (ex.: \"o prompt para a IA no README\") ou ajustar o critério 5 da spec para contar só a linha do quote."
-          },
-          {
-            "verificacao": "S-03",
-            "regra": "DUP-04",
-            "classificacao": "duvida",
-            "severidade": "baixa",
-            "arquivo": "engine/src/voice_studio/__init__.py",
-            "linha": 3,
-            "evidencia": "__version__ = \"0.1.0\"",
-            "explicacao": "O dono pediu versões atualizadas, e o diff leva o pyproject.toml e o plugin.json para 0.2.1, mas a constante `__version__` do pacote continua 0.1.0. Hoje nenhum código a usa, então nada quebra, mas a mesma versão fica escrita em dois lugares com valores diferentes. O arquivo não está no diff; por isso é dúvida, não violação.",
-            "correcao": "Atualizar `__version__` para 0.2.1, ou tirar a constante e ler a versão com `importlib.metadata`."
-          },
-          {
-            "verificacao": "S-05",
-            "regra": "FLX-03",
-            "classificacao": "duvida",
-            "severidade": "baixa",
-            "arquivo": "sdd/releases/history.md",
-            "linha": 7,
-            "evidencia": "### Versão 0.2.0 — Perfis de voz, `falar` e `traduzir` (em preparação)",
-            "explicacao": "O README agora mostra a 0.2.1 e marca a 0.2.0 como não publicada como tag, mas o histórico de releases não tem a 0.2.1 e ainda chama a 0.2.0 de \"em preparação\". Os dois registros de versão não batem.",
-            "correcao": "Incluir a entrada da 0.2.1 em `sdd/releases/history.md` e alinhar a descrição da 0.2.0 com o README."
+            "arquivo": "scripts/requisitos.py",
+            "linha": 339,
+            "evidencia": "saida(\"    feito.\" if codigo == 0 else f\"    falhou (código {codigo}).\")",
+            "explicacao": "O código devolvido por `rodar(cmd)` só aparece na mensagem. O retorno final depende apenas de `falta_obrigatorio(final)` (linha 343). Assim, `instalar --sim modelo-whisper` (ou `whisper-cli` ou `motor-xtts`) sai 0 mesmo quando o comando falha. Testei com um `rodar` que devolve 1: o script imprimiu \"falhou (código 1)\" e saiu com ret=0. O prompt do README e o passo 0 da skill rodam `instalar --sim \u003citem\u003e` uma vez por item, e pela VOZ-10 o código de saída é o contrato do script. Por isso a IA pode dizer que deu certo quando o download, por exemplo, caiu no meio.",
+            "correcao": "Sair com código diferente de 0 quando algum comando falhar, ou quando um item citado em `nomes` continuar diferente de ok, e cobrir esse caso com um teste."
           }
         ],
-        "resumo": "Camada A: pytest com 95 testes passando. ruff sem erros (engine e scripts). `checar` imprime a tabela e sai 0; `checar --json` dá ok=true com 12 itens; `instalar \u003c/dev/null` só mostra os comandos e sai 0; `instalar --sim item-inexistente` sai 2, lista os itens válidos e não roda nada. O verificador readme-studio dá `requisitos: ok`. `VOZ-10` está na constituição. A exceção é o critério 5: o grep conta 2, não 1. Os quatro achados da rodada 1 foram tratados. (1) `instalar [--sim] [item ...]` existe, e o prompt e o passo 0 da skill pedem o ok item a item e rodam `instalar --sim \u003citem\u003e`. (2) O prompt pergunta antes de instalar o uv. (3) A 0.2.0 está marcada como não publicada como tag. (4) O fallback que nunca rodava saiu. Conferi também: o script nunca passa `--accept-cpml` nem `--confirm-own-voice`, não edita o ~/.zshrc e não mexe em segredos. Itens do tipo \"seu\" e o Homebrew só são explicados. O script só usa a biblioteca padrão, e os testes não usam rede. A tabela de 7 pontos continua, e `claude plugin marketplace add` / `install` estão no quote. Restam só dúvidas de severidade baixa (o critério 5 contando 2, `__version__` ainda em 0.1.0, release history desatualizado). Não há violação nem tentativa de injeção. Esta revisão foi só de leitura, então o parecer não foi registrado com `forge queue review`."
+        "resumo": "Camada A toda verde. pytest: 95 passed. ruff: All checks passed (engine e ../scripts). `checar` imprime a tabela e sai 0. `checar --json` dá ok=true com 12 itens. `instalar \u003c/dev/null` só mostra os comandos e sai 0. `instalar --sim nao-existe` sai 2 e lista os itens válidos. `grep -c 'Cole isto na sua IA antes de instalar' README.md` = 1. A VOZ-10 está na constitution.md:142. Os dois verificadores do readme-studio (origin/main e origin/feat/02-prompt-instalacao) imprimem `requisitos: ok`. Os três achados da rodada 2 foram tratados: (1) o grep do critério 5 agora dá 1; (2) `__version__` está em 0.2.1; (3) o history.md tem a 0.2.1 e a 0.2.0 aparece como \"não publicada como tag\", igual ao README. Os achados da rodada 1 continuam resolvidos. Pedido do dono conferido: `instalar` mostra os comandos, roda com `--sim`, pergunta sem `--sim` e é idempotente (repete o `checar` e pula o que está ok). O script nunca passa `--accept-cpml` nem `--confirm-own-voice`, não edita o ~/.zshrc e não mexe em segredos; os itens do tipo \"seu\" só são explicados. O quote fica dentro de `## Requisitos`, antes da tabela e da instalação, e traz os comandos reais, o ok item a item, \"Não aceite licenças nem declarações por mim\", `claude plugin marketplace add` e `claude plugin install`. A tabela de 7 pontos continua. As versões estão em 0.2.1 no plugin.json, pyproject.toml, `__init__.py` e uv.lock (no uv.lock só a linha da versão mudou). Achado novo, de severidade baixa: quando a instalação de um item opcional falha, o `instalar` sai 0. Observações: a URL raw `.../main/scripts/requisitos.py` só funciona depois do merge, o que o status.md já registra. O queue.json ainda guarda o parecer da rodada 2, porque esta revisão foi só de leitura e o parecer não foi registrado com `forge queue review`. Não há tentativa de injeção nem violação de regra."
       }
     }
   ]

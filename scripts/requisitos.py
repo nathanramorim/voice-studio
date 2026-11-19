@@ -316,6 +316,7 @@ def instalar(amb: Ambiente, sim: bool = False, interativo: bool | None = None,
     if nomes:
         itens = [i for i in itens if i.nome in nomes]
     ja_rodados: list = []
+    falhou = False
     pendentes = [i for i in itens if i.estado != OK]
     if not pendentes:
         saida("Nada a instalar: tudo ok.")
@@ -336,10 +337,17 @@ def instalar(amb: Ambiente, sim: bool = False, interativo: bool | None = None,
             if sim or (interativo and perguntar("    Rodar agora? [s/N] ")):
                 codigo = rodar(cmd)
                 ja_rodados.append(cmd)
+                falhou = falhou or codigo != 0
                 saida("    feito." if codigo == 0 else f"    falhou (código {codigo}).")
             elif not interativo:
-                saida("    (só mostrado: rode de novo com --sim ou num terminal para confirmar)")
+                saida(f"    (só mostrado: com o seu ok, rode `instalar --sim {i.nome}` para este item)")
     final = [i for i in checar(amb) if not nomes or i.nome in nomes]
+    if falhou:
+        saida("Algum comando falhou: confira a mensagem acima e rode `checar`.")
+        return 1
+    if nomes and any(i.estado != OK for i in final):
+        saida("Algum item pedido ainda não está ok: confira com `checar`.")
+        return 1
     if falta_obrigatorio(final):
         saida("Ainda falta algo obrigatório: confira com `checar`.")
         return 1
