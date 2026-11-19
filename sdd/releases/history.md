@@ -4,7 +4,16 @@ Este arquivo registra o histórico de entregas de produto deste projeto.
 
 ## Entregas
 
-### Versão 0.2.1 — Requisitos por script e prompt de instalação para a IA
+### Versão 0.3.0 — Requisitos em Linux, Windows e macOS pelo motor multiplataforma
+
+Iniciativa 03, task feat-03-02 (`feat/03-prompt-instalacao`, mesmo PR da 0.2.1).
+
+*   **Motor vendorizado:** `scripts/requisitos.py`, `scripts/bootstrap.sh` e `scripts/bootstrap.ps1` copiados de `nathanramorim/requisitos-para-ia@5f63e02` (origem e sha256 no `skills.lock`); o script próprio da 0.2.1 saiu.
+*   **`requisitos.toml`:** receita por sistema (macOS arm64 e Intel, Linux x64 e arm64 por gerenciador, Windows x64; Windows arm64 sem PyTorch, com a alternativa do WSL), sem Homebrew como pré-requisito; licença CPML, amostra e aprovação da voz continuam com a pessoa.
+*   **README:** o bloco para a IA é a saída de `requisitos.py prompt` (bootstrap por sistema, depois `instalar --sim <item>` com o ok de cada item); caminho com clone e sem clone.
+*   **CI:** `.github/workflows/requisitos.yml` em ubuntu, windows e macos (`validar`, `checar --json`, bootstrap sem uv e `instalar --dry-run`, testes leves).
+
+### Versão 0.2.1 — Requisitos por script e prompt de instalação para a IA (não publicada como tag)
 
 Iniciativa 03 (`feat/03-prompt-instalacao`).
 

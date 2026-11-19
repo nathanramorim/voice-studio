@@ -1,224 +1,84 @@
-"""scripts/requisitos.py: checar e instalar, sem tocar a máquina (tudo injetado)."""
+"""Requisitos pelo motor vendorizado (scripts/requisitos.py, skills.lock): leve, sem rede, sem instalar."""
 
+import hashlib
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
 import pytest
 
 RAIZ = Path(__file__).resolve().parents[2]
-ARQ = RAIZ / "scripts" / "requisitos.py"
-spec = importlib.util.spec_from_file_location("requisitos", ARQ)
+TOML = RAIZ / "requisitos.toml"
+spec = importlib.util.spec_from_file_location("requisitos", RAIZ / "scripts" / "requisitos.py")
 req = importlib.util.module_from_spec(spec)
 sys.modules["requisitos"] = req
 spec.loader.exec_module(req)
 
-VERSOES = {
-    "uv": "uv 0.9.7 (abc)", "brew": "Homebrew 4.0.0", "ffmpeg": "ffmpeg version 8.0.1",
-    "ffprobe": "ffprobe version 8.0.1", "whisper-cli": "whisper 1.9.5",
-}
+
+def ambiente(sistema, arch="x64", programas=(), **extra):
+    """Máquina falsa: só `programas` existem no PATH; nada roda de verdade."""
+    return req.Ambiente(sistema=sistema, arch=arch, home=Path("/casa"), env=extra.pop("env", {}),
+                        which=lambda n: f"/bin/{n}" if n in programas else None,
+                        executar=lambda argv: (127, ""), rodar=lambda argv: 0,
+                        disco_livre_gb=lambda p: 100.0, memoria_gb=lambda: 16.0, **extra)
 
 
-def amb(tmp_path, tem=("brew", "uv", "ffmpeg", "ffprobe", "whisper-cli"), env=None, repo=None,
-        sistema="Darwin", maquina="arm64", disco=30.0, python_ok=True):
-    def executar(args):
-        if args[:3] == ["uv", "python", "find"]:
-            return "/x/python3.11" if python_ok else None
-        if args[0] == "/x/python3.11":
-            return "Python 3.11.14"
-        return VERSOES.get(args[0]) if args[0] in tem else None
-
-    def which(nome):
-        return f"/bin/{nome}" if nome in tem else None
-
-    return req.Ambiente(home=tmp_path, env=env or {}, repo=repo, sistema=sistema, maquina=maquina,
-                        executar=executar, which=which, disco_livre_gb=lambda _: disco)
+def itens():
+    return {i.id: i for i in req.carregar(str(TOML))[1]}
 
 
-def por_nome(itens):
-    return {i.nome: i for i in itens}
+def test_copia_do_motor_bate_com_o_skills_lock():
+    lock = json.loads((RAIZ / "skills.lock").read_text(encoding="utf-8"))["skills"][0]
+    assert lock["commit"].startswith("5f63e02")
+    for destino, sha in lock["arquivos"].items():
+        assert hashlib.sha256((RAIZ / destino).read_bytes()).hexdigest() == sha, destino
 
 
-def test_tudo_instalado_sem_falta_obrigatoria(tmp_path):
-    itens = req.checar(amb(tmp_path))
-    assert not req.falta_obrigatorio(itens)
-    d = por_nome(itens)
-    assert d["ffmpeg"].versao == "8.0.1" and d["uv"].versao == "0.9.7"
-    assert d["python-3.11"].estado == req.OK
+def test_receita_valida_nos_tres_sistemas(capsys):
+    assert req.main(["--arquivo", str(TOML), "validar"]) == 0
+    assert "macos, linux, windows" in capsys.readouterr().out
 
 
-def test_falta_ffmpeg_vira_faltando_com_brew(tmp_path):
-    d = por_nome(req.checar(amb(tmp_path, tem=("brew", "uv"))))
-    assert d["ffmpeg"].estado == req.FALTANDO
-    assert d["ffmpeg"].comandos == [["brew", "install", "ffmpeg"]]
-    assert d["whisper-cli"].estado == req.OPCIONAL and not d["whisper-cli"].obrigatorio
-
-
-def test_python_no_apple_silicon_pede_o_arm64(tmp_path):
-    d = por_nome(req.checar(amb(tmp_path, python_ok=False)))
-    assert d["python-3.11"].comandos == [["uv", "python", "install", req.PYTHON_ARM]]
-    d = por_nome(req.checar(amb(tmp_path, python_ok=False, sistema="Linux", maquina="x86_64")))
-    assert d["python-3.11"].comandos == [["uv", "python", "install", "3.11"]]
-
-
-def test_modelo_whisper_respeita_a_variavel(tmp_path):
-    modelo = tmp_path / "m.bin"
-    d = por_nome(req.checar(amb(tmp_path, env={"VOICE_STUDIO_WHISPER_MODEL": str(modelo)})))
-    assert d["modelo-whisper"].estado == req.OPCIONAL
-    assert d["modelo-whisper"].comandos[0][-2:] == [str(modelo), req.URL_WHISPER]
-    modelo.write_bytes(b"x")
-    d = por_nome(req.checar(amb(tmp_path, env={"VOICE_STUDIO_WHISPER_MODEL": str(modelo)})))
-    assert d["modelo-whisper"].estado == req.OK
-
-
-def test_modelo_xtts_e_perfil_sao_do_usuario_e_sem_comando(tmp_path):
-    d = por_nome(req.checar(amb(tmp_path)))
-    for nome in ("modelo-xtts", "perfil-de-voz"):
-        assert d[nome].tipo == req.SEU and d[nome].comandos == []
-    assert "--accept-cpml" in d["modelo-xtts"].explicacao
-    (tmp_path / "tts" / req.XTTS_PASTA).mkdir(parents=True)
-    d = por_nome(req.checar(amb(tmp_path, env={"TTS_HOME": str(tmp_path)})))
-    assert d["modelo-xtts"].estado == req.OK
-
-
-def test_motor_com_clone_mostra_uv_sync_com_python_arm(tmp_path):
-    d = por_nome(req.checar(amb(tmp_path, repo=tmp_path)))
-    cmd = d["motor-xtts"].comandos[0]
-    assert cmd[:2] == ["uv", "sync"] and req.PYTHON_ARM in cmd and cmd[-2:] == ["--extra", "xtts"]
-    d = por_nome(req.checar(amb(tmp_path, repo=None)))
-    assert d["motor-xtts"].comandos == []
-
-
-def test_json_e_codigo_de_saida(tmp_path, capsys):
-    assert req.main(["checar", "--json"], amb(tmp_path, tem=("brew", "uv"))) == 1
+def test_checar_json_nesta_maquina(capsys):
+    codigo = req.main(["--arquivo", str(TOML), "checar", "--json"])
     dados = json.loads(capsys.readouterr().out)
-    assert dados["ok"] is False
-    campos = {"nome", "estado", "versao", "obrigatorio", "tipo", "comandos", "explicacao"}
-    assert all(set(r) == campos for r in dados["requisitos"])
-    assert req.main(["checar"], amb(tmp_path)) == 0
-    assert "Requisito" in capsys.readouterr().out
+    assert codigo in (0, 1)
+    assert {r["id"] for r in dados["requisitos"]} == set(itens())
 
 
-def test_instalar_sem_tty_so_mostra(tmp_path):
-    rodados, linhas = [], []
-    codigo = req.instalar(amb(tmp_path, tem=("brew", "uv")), interativo=False,
-                          rodar=lambda c: rodados.append(c) or 0, saida=linhas.append)
-    assert rodados == [] and codigo == 1
-    assert any("brew install ffmpeg" in linha for linha in linhas)
-    assert any("Isto é com você" in linha for linha in linhas)
+def test_readme_traz_exatamente_o_prompt_do_motor(capsys):
+    assert req.main(["--arquivo", str(TOML), "prompt"]) == 0
+    bloco = capsys.readouterr().out.strip()
+    readme = (RAIZ / "README.md").read_text(encoding="utf-8")
+    assert bloco in readme
+    assert readme.index(bloco) < readme.index("## Instalação")
+    assert "gh repo clone nathanramorim/voice-studio" in bloco
 
 
-def test_instalar_pergunta_e_respeita_o_nao(tmp_path):
-    rodados, perguntas = [], []
-    req.instalar(amb(tmp_path, tem=("brew", "uv")), interativo=True,
-                 perguntar=lambda p: perguntas.append(p) or False,
-                 rodar=lambda c: rodados.append(c) or 0, saida=lambda _: None)
-    assert perguntas and rodados == []
+@pytest.mark.parametrize("sistema,arch", [("macos", "arm64"), ("macos", "x64"), ("linux", "x64"),
+                                          ("linux", "arm64"), ("windows", "x64"), ("windows", "arm64")])
+def test_toda_maquina_sem_gerenciador_tem_receita(sistema, arch):
+    """Homebrew, winget e apt nunca são pré-requisito: sem nenhum, todo item ainda diz o que fazer."""
+    amb = ambiente(sistema, arch)
+    for item in itens().values():
+        receita, _ = req.escolher_receita(item, amb)
+        assert receita is not None, f"{item.id} sem receita em {sistema} {arch}"
 
 
-def test_instalar_sim_roda_uma_vez_e_nunca_itens_do_usuario(tmp_path):
-    rodados = []
-    req.instalar(amb(tmp_path, tem=("brew", "uv")), sim=True,
-                 rodar=lambda c: rodados.append(c) or 0, saida=lambda _: None)
-    assert rodados.count(["brew", "install", "ffmpeg"]) == 1
-    texto = json.dumps(rodados)
-    for proibido in ("--accept-cpml", "--confirm-own-voice", "ACCEPT_CPML", "zshrc"):
-        assert proibido not in texto
+def test_ninguem_aceita_licenca_nem_declara_a_voz_pela_pessoa():
+    d = itens()
+    for nome in ("licenca-xtts", "amostra-e-consentimento", "aprovar-voz"):
+        assert d[nome].tipo == "pessoa"
+    texto = TOML.read_text(encoding="utf-8")
+    comandos = re.findall(r"comandos = (\[\[.*\]\])", texto)
+    assert comandos and not any("accept-cpml" in c or "confirm-own-voice" in c for c in comandos)
 
 
-def test_instalar_sem_pendencia_nao_faz_nada(tmp_path):
-    (tmp_path / ".voice-studio" / "perfis" / "a").mkdir(parents=True)
-    (tmp_path / ".voice-studio" / "perfis" / "a" / "perfil.json").write_text("{}")
-    (tmp_path / "Library" / "Application Support" / "tts" / req.XTTS_PASTA).mkdir(parents=True)
-    modelo = tmp_path / ".cache" / "whisper" / "ggml-small.bin"
-    modelo.parent.mkdir(parents=True)
-    modelo.write_bytes(b"x")
-    (tmp_path / "venv" / "lib" / "python3.11" / "site-packages" / "TTS").mkdir(parents=True)
-    linhas = []
-    env = {"VOICE_STUDIO_WHISPER_MODEL": str(modelo), "UV_PROJECT_ENVIRONMENT": str(tmp_path / "venv")}
-    a = amb(tmp_path, env=env, repo=tmp_path)
-    assert req.instalar(a, sim=True, rodar=pytest.fail, saida=linhas.append) == 0
-    assert linhas == ["Nada a instalar: tudo ok."]
-
-
-def test_readme_tem_o_prompt_para_a_ia_antes_da_instalacao():
-    texto = (RAIZ / "README.md").read_text(encoding="utf-8")
-    requisitos = texto.split("## Requisitos", 1)[1].split("\n## ", 1)[0]
-    assert "Cole isto na sua IA antes de instalar" in requisitos
-    assert "scripts/requisitos.py checar" in requisitos and "scripts/requisitos.py instalar" in requisitos
-    assert "Não aceite licenças nem declarações por mim" in requisitos
-    assert texto.index("Cole isto na sua IA") < texto.index("## Instalação")
-
-
-def test_instalar_so_os_itens_citados(tmp_path):
-    tem, rodados = ["brew", "uv"], []
-
-    def rodar(c):
-        rodados.append(c)
-        tem.append("whisper-cli")  # simula a instalação
-        return 0
-
-    codigo = req.instalar(amb(tmp_path, tem=tem), sim=True, nomes=["whisper-cli"],
-                          rodar=rodar, saida=lambda _: None)
-    assert rodados == [["brew", "install", "whisper-cpp"]]
-    assert codigo == 0  # ffmpeg faltando não entra: não foi pedido
-
-
-def test_instalar_sai_1_se_o_item_pedido_continua_faltando(tmp_path):
-    codigo = req.instalar(amb(tmp_path, tem=("brew", "uv")), sim=True, nomes=["whisper-cli"],
-                          rodar=lambda c: 0, saida=lambda _: None)
-    assert codigo == 1
-
-
-def test_instalar_sai_1_se_um_comando_falha(tmp_path):
-    linhas = []
-    codigo = req.instalar(amb(tmp_path), sim=True, nomes=["modelo-whisper"],
-                          rodar=lambda c: 7, saida=linhas.append)
-    assert codigo == 1 and any("falhou (código 7)" in linha for linha in linhas)
-
-
-def test_instalar_sem_tty_aponta_para_o_item_e_nunca_para_tudo(tmp_path):
-    linhas = []
-    req.instalar(amb(tmp_path, tem=("brew", "uv")), interativo=False,
-                 rodar=pytest.fail, saida=linhas.append)
-    dicas = [linha for linha in linhas if "só mostrado" in linha]
-    assert dicas and all("instalar --sim " in d and "com o seu ok" in d for d in dicas)
-    assert any("instalar --sim ffmpeg" in d for d in dicas)
-    assert not any(d.rstrip(")").endswith("--sim`") or "rode de novo com --sim" in d for d in dicas)
-
-
-def test_instalar_item_desconhecido_sai_2_e_lista_os_validos(tmp_path):
-    linhas, rodados = [], []
-    codigo = req.instalar(amb(tmp_path, tem=("brew", "uv")), sim=True, nomes=["ffmpeg", "nada"],
-                          rodar=lambda c: rodados.append(c) or 0, saida=linhas.append)
-    assert codigo == 2 and rodados == []
-    assert "nada" in linhas[0] and "ffmpeg" in linhas[0] and "modelo-whisper" in linhas[0]
-
-
-def test_main_instalar_aceita_nomes_depois_do_sim(tmp_path, capsys):
-    assert req.main(["instalar", "--sim", "nada"], amb(tmp_path)) == 2
-    assert "Itens válidos" in capsys.readouterr().out
-
-
-def test_readme_prompt_pede_ok_item_a_item_e_antes_do_uv():
-    texto = (RAIZ / "README.md").read_text(encoding="utf-8")
-    assert "requisitos.py instalar --sim <item>" in texto
-    assert "se não tiver o `uv`, me pergunte" in texto
-
-
-def test_instalar_item_do_usuario_pedido_pelo_nome_so_explica_e_nao_falha(tmp_path):
-    linhas = []
-    codigo = req.instalar(amb(tmp_path), sim=True, nomes=["perfil-de-voz", "modelo-xtts", "motor-xtts"],
-                          rodar=pytest.fail, saida=linhas.append)
-    assert codigo == 0
-    for nome in ("perfil-de-voz", "modelo-xtts", "motor-xtts"):
-        assert any(linha.startswith(f"- {nome}: Isto é com você:") for linha in linhas)
-
-
-def test_readme_e_skill_so_rodam_itens_com_comando():
-    for arq in ("README.md", "skills/voice-studio/SKILL.md"):
-        texto = (RAIZ / arq).read_text(encoding="utf-8")
-        assert "só para os itens que têm comando" in texto, arq
-    assert "é com você" in (RAIZ / "README.md").read_text(encoding="utf-8")
-    assert "você só explica" in (RAIZ / "skills/voice-studio/SKILL.md").read_text(encoding="utf-8")
+def test_windows_arm64_sem_pytorch_e_apple_silicon_com_python_arm64():
+    d = itens()
+    r, _ = req.escolher_receita(d["motor-xtts"], ambiente("windows", "arm64"))
+    assert "WSL" in r["nao_suportado"]
+    r, _ = req.escolher_receita(d["python-3-11"], ambiente("macos", "arm64"))
+    assert r["comandos"] == [["uv", "python", "install", "cpython-3.11-macos-aarch64-none"]]

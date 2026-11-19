@@ -18,7 +18,7 @@ def resolve_model(model: Path | None) -> Path:
     if chosen is None or not chosen.is_file():
         raise VoiceError(
             f"Informe --model (ou defina {MODEL_ENV}) com um modelo ggml do whisper.cpp, "
-            "ex.: ggml-small.bin. Instalação: brew install whisper-cpp."
+            "ex.: ggml-small.bin. Para instalar: uv run scripts/requisitos.py instalar whisper-cli modelo-whisper."
         )
     return chosen
 
