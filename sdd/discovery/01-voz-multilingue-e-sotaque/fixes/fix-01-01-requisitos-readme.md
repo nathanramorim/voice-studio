@@ -41,6 +41,7 @@ Nenhuma.
 | Amostra 6 a 30 s | `audio.extract_sample`: `if not 6.0 <= duration <= 30.0` |
 | Consentimento e licença | `cli.py` (`--confirm-own-voice`, `--accept-cpml`), `consent.py` (`VOICE_STUDIO_ACCEPT_CPML`) |
 | Perfis | `profile.py`: `VOICE_STUDIO_HOME` ou `~/.voice-studio/perfis` |
+| Versões "instalado no teste" e máquina | Medidas na máquina do teste (macOS Apple Silicon, 8 GB de RAM): uv 0.9.7, ffmpeg 9.0.2, whisper.cpp 1.9.5; não estão no código. Disco ~4 GB = ambiente ~1 GB + XTTS-v2 ~2 GB + Whisper small ~470 MB (tamanhos dos modelos pela página oficial de cada um, não medidos). A transcrição de ponta a ponta com vídeo real segue não validada (README, "Status e limites"). |
 
 ## Critérios de Aceitação Executáveis
 1. `uv run verificar_readme.py README.md` (readme-studio 0.4.0) imprime `requisitos: ok`.

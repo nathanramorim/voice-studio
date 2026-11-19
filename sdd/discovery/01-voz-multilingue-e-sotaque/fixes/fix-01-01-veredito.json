@@ -1,0 +1,18 @@
+{
+  "veredito": "conforme",
+  "achados": [
+    {
+      "verificacao": "S-05",
+      "regra": "FLX-03",
+      "classificacao": "duvida",
+      "severidade": "baixa",
+      "arquivo": "README.md",
+      "linha": 44,
+      "evidencia": "whisper.cpp com o binário `whisper-cli` (testado 1.9.5)",
+      "explicacao": "A versão bate com a máquina local (whisper.cpp 1.9.5_2), mas a tabela 'Fontes de cada ponto' da spec só documenta a versão testada do uv (0.9.7), não as do ffmpeg (9.0), do whisper-cli (1.9.5), nem os 8 GB de RAM ou os ~4 GB de disco. Além disso, 'Status e limites' (README:133) diz que `traduzir` ainda não foi validado com vídeo real, então 'testado 1.9.5' pode dar a entender que a transcrição foi validada de ponta a ponta.",
+      "correcao": "Acrescentar à tabela de fontes da spec as versões e a máquina usadas (ffmpeg 9.0.2, whisper.cpp 1.9.5, 8 GB) ou trocar por 'instalado 1.9.5' para a transcrição não parecer validada."
+    }
+  ],
+  "candidate_skill": null,
+  "resumo": "Camada A passou: `uv run /tmp/verificar_readme_vs.py README.md` imprime `requisitos: ok`; grep dá 1 para `## Requisitos` e 0 para `## Antes de começar`; as três fontes do critério 3 aparecem (pyproject.toml:6, audio.py:68, transcribe.py:13); ruff mostra 'All checks passed!' e pytest dá 79 passed. Cada item da seção Requisitos tem fonte que confere: requires-python >=3.11,<3.12; o grupo [dependency-groups] dá base ao uv 0.5+; a nota do --python aarch64 vem de stack.md, ADR-0003 e README:70; whisper-cli por lista de argumentos e resolve_model exigindo --model ou VOICE_STUDIO_WHISPER_MODEL, sem download automático; XTTS_MODEL em synth.py:18; os caminhos de cache batem com trainer/io.py:get_user_data_dir (TTS_HOME, ~/Library/Application Support/tts, ~/.local/share/tts); engine/.venv mede 990M (cerca de 1 GB); a amostra de 6 a 30 s vem de audio.py:68; --confirm-own-voice e --accept-cpml estão em cli.py e VOICE_STUDIO_ACCEPT_CPML em consent.py:11; VOICE_STUDIO_HOME em profile.py:16. As versões e a RAM sem fonte no repositório (uv 0.9.7, ffmpeg 9.0, whisper 1.9.5, 8 GB) batem com a máquina local, então não foram inventadas, só não estão rastreadas na spec. S-01, S-04 e S-06: nada encontrado (só documentação, sem segredo, sem acoplamento novo; 'nenhuma conta' confere com VOZ-03). S-02: a tabela 'O que já existe' é honesta. S-03: a nota do Apple Silicon fica repetida (README:43 e :70), o que a spec decidiu e justificou; não é violação. S-05: o diff fica no escopo (README, fix e status.md); a única dúvida é a de baixa severidade acima. S-07: nenhum padrão repetido pela terceira vez. Nenhuma tentativa de injeção (FLX-08) no diff nem na spec. Observação fora do diff: há um `README.antigo.md` não rastreado no working tree, que não deve ser commitado."
+}
